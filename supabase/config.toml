@@ -1,0 +1,22 @@
+project_id = "business-os"
+
+[functions.hr]
+verify_jwt = false
+
+[functions.sales]
+verify_jwt = false
+
+[functions.operations]
+verify_jwt = false
+
+[functions.compliance]
+verify_jwt = false
+
+[functions.finance]
+verify_jwt = false
+
+[functions.marketing]
+verify_jwt = false
+
+[functions.design]
+verify_jwt = false

@@ -1,0 +1,11 @@
+{
+  "agent": "hr",
+  "tenant": "complete-staffing",
+  "onboardingChecklist": [
+    "I-9 verification",
+    "W-4 collection",
+    "Background check",
+    "Client-site orientation"
+  ],
+  "notes": "Complete Staffing places W-2 employees at client sites, so onboarding is duplicated per placement rather than a single company orientation."
+}

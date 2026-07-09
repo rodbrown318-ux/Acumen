@@ -1,0 +1,14 @@
+{
+  "slug": "complete-staffing",
+  "displayName": "Complete Staffing",
+  "enabledAgents": [
+    "hr",
+    "sales",
+    "operations",
+    "compliance",
+    "finance",
+    "marketing",
+    "design"
+  ],
+  "notes": "First business onboarded to the Business OS. Used as the reference integration for onboarding future tenants."
+}

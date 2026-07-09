@@ -1,0 +1,10 @@
+{
+  "agent": "compliance",
+  "tenant": "complete-staffing",
+  "trackedCredentials": [
+    "I-9",
+    "Workers' comp certificate",
+    "Client-required background check"
+  ],
+  "notes": "Staffing agencies carry compliance exposure per placement, not just per employee — track by (employee, client) pair."
+}

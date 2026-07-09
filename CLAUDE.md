@@ -6,14 +6,9 @@ runs as Supabase Edge Functions and can be plugged into any business
 without forking the agent code. The first business running on it is
 **Complete Staffing**.
 
-> **Naming note:** the spec that seeded this repo listed 8 names (hr, sales,
-> operations, compliance, finance, marketing, marketing funnels, design) but
-> said "7 standalone agents." This scaffold resolves that by treating
-> **Marketing Funnels as a capability inside the Marketing agent**
-> (`supabase/functions/marketing/funnels.ts`), not a separate Edge Function —
-> giving exactly 7 standalone agents. If Marketing Funnels was actually meant
-> to be its own agent, split it out into `supabase/functions/marketing-funnels/`
-> following the same pattern as the other agents and add it to the list below.
+> **Naming note:** Marketing Funnels is a capability inside the Marketing
+> agent (`supabase/functions/marketing/funnels.ts`), not a separate Edge
+> Function — this is confirmed, giving exactly 7 standalone agents.
 
 ## Architecture at a glance
 

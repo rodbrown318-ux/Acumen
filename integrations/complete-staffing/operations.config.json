@@ -1,0 +1,9 @@
+{
+  "agent": "operations",
+  "tenant": "complete-staffing",
+  "supabaseProjectRef": "wcntkelmuxjczhyauupq",
+  "escalationEmail": "info@completestaffing.org",
+  "offerWindowMinutes": 30,
+  "escalationHoursBeforeStart": 4,
+  "notes": "Values here are documentation of what this tenant's deployment is configured with. The actual runtime config is environment variables/secrets on this tenant's Supabase project (see supabase/functions/.env.example) -- this file is not read by the function itself."
+}

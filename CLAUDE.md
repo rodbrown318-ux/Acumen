@@ -10,6 +10,22 @@ without forking the agent code. The first business running on it is
 > agent (`supabase/functions/marketing/funnels.ts`), not a separate Edge
 > Function — this is confirmed, giving exactly 7 standalone agents.
 
+## What "MCP-powered" means here
+
+Each agent is more than a CRUD API: for decisions that require judgment
+(which candidate is the best match, not just which ones are eligible), the
+agent hands the decision to Claude via tool-calling rather than hand-coding
+a scoring formula. The tools Claude is given are the same shape MCP tools
+take — structured, typed, single-purpose actions — but they're wired up
+through the Anthropic Messages API directly (`npm:@anthropic-ai/sdk`)
+instead of the `@anthropic-ai/claude-agent-sdk` package or a literal MCP
+server. That package assumes a long-lived Node/CLI process (it can shell
+out to the Claude Code CLI); Supabase Edge Functions are stateless, sandboxed
+Deno isolates invoked per-request with no subprocess support, so it can't
+run there. See `supabase/functions/operations/agentClient.ts` for the
+reference implementation of this pattern — every future agent that needs a
+judgment call should follow the same shape.
+
 ## Architecture at a glance
 
 ```
@@ -38,8 +54,11 @@ This is what makes the same 7 agents reusable across unrelated businesses.
 supabase/
   config.toml                    # local dev config; one entry per agent function
   migrations/
-    20260709000000_tenants.sql   # shared `tenants` table every agent resolves against
+    20260709000000_tenants.sql          # shared `tenants` table every agent resolves against
+    20260709010000_operations_agent.sql # shifts/caregivers/offers/agent_decisions tables
+    20260709020000_operations_agent_cron.sql # pg_cron: polls the Operations agent every 15 min
   functions/
+    .env.example                 # every env var an agent deployment needs, documented
     _shared/                     # the core communication layer (see below)
       types.ts                   # AgentRequest / AgentResponse / TenantContext / AgentMessage
       client.ts                  # service-role Supabase client factory
@@ -52,7 +71,7 @@ supabase/
                                   #   boilerplate so agent code only defines actions
     hr/index.ts                  # HR agent
     sales/index.ts                # Sales agent
-    operations/index.ts           # Operations agent
+    operations/                   # Operations agent — see "Agent 1" section below
     compliance/index.ts           # Compliance agent
     finance/index.ts              # Finance agent
     marketing/
@@ -65,6 +84,7 @@ integrations/
     tenant.json                   # tenant identity + which agents are enabled
     hr.config.json                # example: business-specific agent config
     compliance.config.json        # example: business-specific agent config
+    operations.config.json        # documents this tenant's Operations agent config
     README.md
 ```
 
@@ -144,6 +164,81 @@ or, on failure, `{ "ok": false, "agent": "hr", "action": "unknown", "error": "..
 3. Point the business's callers at the agent Edge Functions with its
    `x-tenant-slug`. No agent code or deploy changes required.
 
+## Agent 1: Operations (shift matching)
+
+The Operations agent (`supabase/functions/operations/`) is the first agent
+built out beyond the `ping` placeholder. It fills open shifts for a staffing
+business end to end:
+
+```
+supabase/functions/operations/
+  index.ts        # routes: POST {action} via createAgentHandler, plus a public
+                   #   GET /respond?token=&decision= for caregiver email links
+  poll.ts          # the 15-minute cycle: expire stale offers, match every open
+                   #   shift, alert on anything unfilled inside the escalation window
+  matching.ts       # per-shift: fetch candidates -> ask the agent -> send the offer
+  agentClient.ts     # the Claude tool-calling step described above
+  db.ts               # all Supabase queries (shifts, caregivers, offers, decisions)
+  email.ts             # Resend integration: offer emails + escalation alerts
+  respond.ts            # handles the public accept/decline link
+  config.ts              # reads env vars into a single PollConfig
+  types.ts                # Shift / Caregiver / ShiftOffer / CandidateCaregiver
+```
+
+**Flow:**
+1. `pg_cron` (see `supabase/migrations/20260709020000_operations_agent_cron.sql`)
+   POSTs `{"action": "pollShifts"}` to this function every 15 minutes, once
+   per tenant, with that tenant's `x-tenant-slug` header.
+2. `poll.ts` first expires any offer past its response window (default 30
+   min, `OPERATIONS_OFFER_WINDOW_MINUTES`) and reopens that shift.
+3. For every shift with `status = 'open'`, `db.ts` deterministically filters
+   caregivers to those with a non-expired matching credential, availability
+   covering the shift window, and no conflicting assignment or pending
+   offer elsewhere. `agentClient.ts` then asks Claude to pick the best of
+   that eligible set (fairness, credential margin, etc.) — a tie-break
+   judgment call, not a lookup.
+4. `email.ts` sends the chosen caregiver a Resend email with accept/decline
+   links carrying a per-offer opaque token (`shift_offers.response_token`).
+5. Clicking a link hits `GET /respond` (`respond.ts`) — public and
+   unauthenticated, since the caller is an external caregiver, not a tenant
+   system. Accept fills the shift; decline reopens it and immediately tries
+   the next candidate rather than waiting for the next poll.
+6. Each poll also alerts `OPERATIONS_ESCALATION_EMAIL` for any shift still
+   open within `OPERATIONS_ESCALATION_HOURS` (default 4) of its start time.
+   Escalating only records `escalated_at` — it does not stop the agent from
+   still trying to fill the shift.
+7. Every decision (offer sent, no candidates, no match, accepted, declined,
+   expired, escalated, match error) is written to `agent_decisions` with a
+   `reasoning` field when the agent supplied one — this is the audit trail.
+
+**Data model** (`supabase/migrations/20260709010000_operations_agent.sql`):
+`caregivers`, `caregiver_credentials`, `caregiver_availability`, `shifts`,
+`shift_offers`, and the shared `agent_decisions` table every agent (not
+just Operations) should log to. All are tenant-scoped and RLS-enabled with
+no policies — only the service-role key (used exclusively server-side) can
+read or write them.
+
+**Config, per business** (`supabase/functions/.env.example`): `SUPABASE_URL`,
+`SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`,
+`RESEND_FROM_EMAIL`, `OPERATIONS_ESCALATION_EMAIL`,
+`OPERATIONS_OFFER_WINDOW_MINUTES`, `OPERATIONS_ESCALATION_HOURS`. Onboarding
+a new business's Operations agent means deploying this same code to that
+business's own Supabase project and setting these secrets to its values —
+no code changes. Complete Staffing's project ref
+(`wcntkelmuxjczhyauupq`) and current config values are documented in
+`integrations/complete-staffing/operations.config.json` (documentation
+only — the function reads live env vars, not this file).
+
+**Known limitations to close before relying on this in production:**
+- Availability matching compares clock time in UTC (`db.ts`,
+  `getCandidateCaregivers`); if shifts span multiple business timezones,
+  add a timezone per tenant/site and convert before comparing.
+- Availability is a single weekly recurring window per row — no support yet
+  for one-off availability changes or time off.
+- The migrations create tables and schedule the cron job but don't seed
+  any `caregivers`/`shifts` data — that's real business data and has to
+  come from Complete Staffing, not be fabricated by a migration.
+
 ## Runtime notes
 
 - Agents run on Deno (Supabase Edge Functions runtime), not Node — imports
@@ -153,5 +248,6 @@ or, on failure, `{ "ok": false, "agent": "hr", "action": "unknown", "error": "..
   key gates inter-agent calls. Before exposing any agent to a public
   frontend directly, add real end-user auth (Supabase Auth JWT) on top of
   this — the current scaffold assumes trusted server-to-server callers.
-- Every agent index.ts currently only implements a `ping` action as a
-  placeholder — replace with real domain actions per agent.
+- Every agent except Operations currently only implements a `ping` action
+  as a placeholder — replace with real domain actions per agent, following
+  `supabase/functions/operations/` as the reference implementation.

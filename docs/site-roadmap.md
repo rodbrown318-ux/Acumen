@@ -96,3 +96,49 @@ cleanly across agents/devs with little overlap:
 - **Track B — Facility flow:** "Request Staff" path (#2), local proof (#7)
 - **Track C — Infra/hardening:** Tier 3 in full (#9–#12)
 - **Track D — Content/SEO:** copy, badges (#8), training funnel (#6)
+
+---
+
+## Appendix: Aya's logged-in UX patterns (competitive reference)
+
+Observed from Aya's live registration, candidate dashboard, and job-search
+screens. These are the concrete targets the roadmap items above map to — copy
+the *structure*, deliver it at local scale without the enterprise weight.
+
+### Registration = short multi-step wizard (maps to Tier 1 #3)
+A 3-step wizard with a visible progress indicator (1 → 2 → 3). Step asks only:
+**Profession** (e.g. CNA / Nurse Assistant), **Primary Specialty** (e.g. Acute
+Care Float), **Experience** (e.g. 5 years) — all **dropdowns**, Back/Next.
+Right rail: "Instant access. Endless possibilities." + real clinician photos.
+Takeaway: keep our apply to 2–3 short steps, dropdown-driven, no résumé to
+start. Our quick-apply (name + phone → recruiter texts back) is an even lower
+first rung; the wizard is the "full profile" upgrade path.
+
+### Candidate portal = profile % + task list + saved searches (maps to Tier 4 #15)
+`my.ayahealthcare.com` — left sidebar: Home · Search jobs · My jobs · Profile ·
+Documents & tasks · My team. Home shows:
+- **"Complete your profile — 0 of 7 sections, 0%"** ring with a GET STARTED CTA.
+- **"Get ready for your next assignment"** checklist: verify contact info,
+  work history & references, job preferences, checklists, **expiring compliance
+  items** (done items shown green-checked).
+- **Saved searches** ("get notified in real time").
+- A persistent **"Recommend my recruiter"** button (referral loop).
+Takeaway: our `caregiver_credentials` / `caregiver_availability` schema already
+backs the compliance-tasks and preferences pieces. The profile-% ring and task
+checklist are the engagement mechanic worth copying.
+
+### Job search = three-pane + filter drawer (maps to Tier 1 #1, our board)
+Results header: **"227 Openings (158 Unique jobs)"** + Sort by. Cards show
+**location · role/title · specialty · shift pattern (1×12 Day) · pay
+($360.00/shift) · # openings**, with a right-hand **job-detail pane** and a
+**filter drawer**: Specialties · Locations · Employment types · Shifts &
+contracts · Additional. Actions: **Save this search**, **Apply with Aya**.
+Pay carries the disclaimer *"approximate — confirm with your recruiter."*
+Takeaways for our board:
+- Add **shift pattern** and **# openings** to job cards (we already show role,
+  facility, city, date, type, pay).
+- A **"Save this search"** action = our job-alerts feature (Tier 4 #14).
+- The three-pane layout is right at Aya's scale (hundreds of jobs); our
+  simpler top-filter + list is the correct choice until volume demands a drawer.
+- Follow the **pay disclaimer** pattern so shown ranges never become a
+  compliance/expectation problem.

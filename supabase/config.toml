@@ -20,3 +20,10 @@ verify_jwt = false
 
 [functions.design]
 verify_jwt = false
+
+# Public, candidate-facing job board (read-only). Not one of the 7 agents --
+# no agent calls it via the bus -- so it is intentionally absent from
+# AgentName in _shared/types.ts. verify_jwt stays false because the caller is
+# an anonymous job seeker; tenant identity comes from a ?tenant= query param.
+[functions.jobs]
+verify_jwt = false

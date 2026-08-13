@@ -1,0 +1,372 @@
+<title>Open Shifts Board</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  /* ---- Tokens: complete light palette on bare :root ---- */
+  :root {
+    --ground: #eef1f5;
+    --surface: #ffffff;
+    --surface-2: #f4f7fa;
+    --ink: #13293d;
+    --ink-soft: #4a5b6b;
+    --ink-faint: #7c8b98;
+    --line: #dde4ec;
+    --accent: #0c8577;      /* scrub teal — primary action */
+    --accent-ink: #ffffff;
+    --accent-soft: #e2f1ee;
+    --warm: #c85a2b;        /* fills-fast marker */
+    --warm-soft: #f8e7dd;
+    --pay: #0a6f63;         /* pay figure */
+    --focus: #0c8577;
+    --shadow: 0 1px 2px rgba(19,41,61,.06), 0 6px 20px rgba(19,41,61,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0d1720;
+      --surface: #15232f;
+      --surface-2: #1b2c3a;
+      --ink: #e8eef4;
+      --ink-soft: #a7b6c3;
+      --ink-faint: #74869a;
+      --line: #263847;
+      --accent: #24a99a;
+      --accent-ink: #04120f;
+      --accent-soft: #16332f;
+      --warm: #e68a5c;
+      --warm-soft: #33241b;
+      --pay: #4fc4b4;
+      --focus: #38c2b2;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0d1720;
+    --surface: #15232f;
+    --surface-2: #1b2c3a;
+    --ink: #e8eef4;
+    --ink-soft: #a7b6c3;
+    --ink-faint: #74869a;
+    --line: #263847;
+    --accent: #24a99a;
+    --accent-ink: #04120f;
+    --accent-soft: #16332f;
+    --warm: #e68a5c;
+    --warm-soft: #33241b;
+    --pay: #4fc4b4;
+    --focus: #38c2b2;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+
+  /* ---- Header ---- */
+  header.site {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .site-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 14px 0;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -.01em; }
+  .brand .mark {
+    width: 30px; height: 30px; border-radius: 8px; flex: none;
+    background: var(--accent); color: var(--accent-ink);
+    display: grid; place-items: center; font-size: 15px; font-weight: 800;
+  }
+  .brand small { display: block; font-weight: 500; font-size: 11px; color: var(--ink-faint); letter-spacing: .02em; }
+  .site-cta {
+    font-size: 13.5px; font-weight: 600; text-decoration: none;
+    color: var(--ink-soft); padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--line);
+  }
+  .site-cta:hover { color: var(--ink); border-color: var(--ink-faint); }
+
+  /* ---- Hero band ---- */
+  .hero { padding: 40px 0 26px; }
+  .hero h1 {
+    font-size: clamp(26px, 4.4vw, 40px); line-height: 1.08; margin: 0 0 10px;
+    letter-spacing: -.025em; text-wrap: balance; max-width: 16ch;
+  }
+  .hero p { margin: 0; color: var(--ink-soft); max-width: 54ch; font-size: 16px; }
+
+  /* ---- Stat strip ---- */
+  .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: var(--line); border: 1px solid var(--line);
+    border-radius: 14px; overflow: hidden; margin-top: 22px;
+  }
+  .stat { background: var(--surface); padding: 16px 18px; }
+  .stat .n { font-size: 22px; font-weight: 750; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: 12px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+
+  /* ---- Filter bar ---- */
+  .controls { margin: 26px 0 14px; display: flex; flex-direction: column; gap: 12px; }
+  .search {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 11px; padding: 0 12px; box-shadow: var(--shadow);
+  }
+  .search svg { flex: none; color: var(--ink-faint); }
+  .search input {
+    border: 0; background: transparent; color: var(--ink);
+    font: inherit; padding: 12px 0; width: 100%; outline: none;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    background: var(--surface); color: var(--ink-soft);
+    border: 1px solid var(--line); border-radius: 999px; padding: 7px 13px;
+    transition: background .12s, color .12s, border-color .12s;
+  }
+  .chip:hover { border-color: var(--ink-faint); color: var(--ink); }
+  .chip[aria-pressed="true"] {
+    background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
+  }
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .chip-group .lbl { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); margin-right: 2px; }
+
+  .result-count { font-size: 13.5px; color: var(--ink-faint); padding: 2px 2px 0; }
+  .result-count b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* ---- Job list ---- */
+  .list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 40px; list-style: none; margin: 12px 0 0; }
+  .job {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px; box-shadow: var(--shadow);
+    display: grid; grid-template-columns: 1fr auto; gap: 16px 20px; align-items: start;
+  }
+  .job-main { min-width: 0; }
+  .job-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .role { font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+  .badge {
+    font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 6px; background: var(--accent-soft); color: var(--pay);
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .fast {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+    color: var(--warm); background: var(--warm-soft); padding: 3px 8px; border-radius: 6px;
+  }
+  .facility { color: var(--ink); font-weight: 600; font-size: 14.5px; }
+  .meta { color: var(--ink-soft); font-size: 13.5px; display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; }
+  .meta .type { text-transform: capitalize; }
+  .summary { color: var(--ink-faint); font-size: 13px; margin-top: 8px; max-width: 60ch; }
+
+  .job-side { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .pay {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 19px; font-weight: 600; color: var(--pay); letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .pay small { display: block; font-size: 11px; color: var(--ink-faint); font-weight: 500; letter-spacing: .02em; }
+  .apply {
+    font: inherit; font-size: 13.5px; font-weight: 650; cursor: pointer;
+    background: var(--accent); color: var(--accent-ink); border: 0;
+    border-radius: 9px; padding: 9px 16px; white-space: nowrap;
+  }
+  .apply:hover { filter: brightness(1.06); }
+  .text-rec { font-size: 12px; color: var(--ink-faint); text-decoration: none; }
+  .text-rec:hover { color: var(--accent); text-decoration: underline; }
+
+  /* quick-apply panel */
+  .quick { grid-column: 1 / -1; border-top: 1px dashed var(--line); margin-top: 4px; padding-top: 14px; display: none; }
+  .job.open .quick { display: block; }
+  .quick p { margin: 0 0 10px; font-size: 13px; color: var(--ink-soft); }
+  .quick-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .quick input {
+    flex: 1 1 160px; font: inherit; font-size: 14px; padding: 10px 12px;
+    border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); color: var(--ink);
+  }
+  .quick input:focus { outline: 2px solid var(--focus); outline-offset: 1px; border-color: transparent; }
+  .quick .apply { flex: none; }
+  .quick .done { color: var(--pay); font-weight: 600; font-size: 14px; }
+
+  .empty { text-align: center; color: var(--ink-faint); padding: 48px 0; font-size: 15px; }
+
+  footer.note {
+    border-top: 1px solid var(--line); background: var(--surface);
+    color: var(--ink-faint); font-size: 12.5px; padding: 18px 0; text-align: center;
+  }
+  footer.note code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-soft); font-size: 12px; }
+
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+  @media (max-width: 620px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .job { grid-template-columns: 1fr; }
+    .job-side { text-align: left; align-items: flex-start; flex-direction: row; justify-content: space-between; width: 100%; }
+  }
+</style>
+
+<header class="site">
+  <div class="wrap site-row">
+    <div class="brand">
+      <span class="mark">CS</span>
+      <span>Complete Staffing<small>Florida healthcare staffing</small></span>
+    </div>
+    <a class="site-cta" href="#">Request staff →</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <h1>Open healthcare shifts across Florida.</h1>
+    <p>Browse real openings with pay up front — no login, no résumé upload to look. See a shift you want? Apply in about 60 seconds and a local recruiter texts you back the same day.</p>
+    <div class="stats" id="stats">
+      <div class="stat"><div class="n" id="stat-open">—</div><div class="l">Open shifts</div></div>
+      <div class="stat"><div class="n" id="stat-pay">—</div><div class="l">Pay range</div></div>
+      <div class="stat"><div class="n" id="stat-cities">—</div><div class="l">Cities hiring</div></div>
+    </div>
+  </section>
+
+  <section class="wrap controls" aria-label="Filter shifts">
+    <label class="search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+      <input id="q" type="search" placeholder="Search role, facility, or city…" aria-label="Search shifts" />
+    </label>
+    <div class="chip-group" id="role-filters"><span class="lbl">Role</span></div>
+    <div class="chip-group" id="city-filters"><span class="lbl">City</span></div>
+    <div class="chip-group" id="type-filters"><span class="lbl">Type</span></div>
+  </section>
+
+  <div class="wrap">
+    <div class="result-count" id="count" aria-live="polite"></div>
+    <ul class="list" id="list"></ul>
+  </div>
+</main>
+
+<footer class="note">
+  <div class="wrap">
+    Prototype for <b>completestaffing.org</b> · powered by the public
+    <code>GET /functions/v1/jobs?tenant=complete-staffing</code> endpoint in this repo.
+    Shifts shown are sample data.
+  </div>
+</footer>
+
+<script>
+  // Mock data in the exact PublicJob shape returned by supabase/functions/jobs.
+  const JOBS = [
+    { id:"1", role:"CNA", credential:"CNA", facility:"Orlando Health", city:"Orlando", employmentType:"per_diem", startTime:"2026-08-16T07:00", endTime:"2026-08-16T19:00", payRateMin:22, payRateMax:26, payPeriod:"hour", fast:true, summary:"Day shift, 12h. Med-surg floor. Immediate need." },
+    { id:"2", role:"RN", credential:"RN", facility:"AdventHealth Tampa", city:"Tampa", employmentType:"travel", startTime:"2026-08-18T19:00", endTime:"2026-08-19T07:00", payRateMin:48, payRateMax:58, payPeriod:"hour", fast:false, summary:"Med-surg / tele. 13-week contract, nights." },
+    { id:"3", role:"HHA", credential:"HHA", facility:"Comfort Home Care", city:"Miami", employmentType:"per_diem", startTime:"2026-08-15T09:00", endTime:"2026-08-15T15:00", payRateMin:18, payRateMax:21, payPeriod:"hour", fast:false, summary:"In-home care visit, one client, Kendall area." },
+    { id:"4", role:"LPN", credential:"LPN", facility:"Baptist Health", city:"Jacksonville", employmentType:"contract", startTime:"2026-08-17T15:00", endTime:"2026-08-17T23:00", payRateMin:30, payRateMax:36, payPeriod:"hour", fast:true, summary:"Evening shift. Skilled nursing wing." },
+    { id:"5", role:"CNA", credential:"CNA", facility:"Brookdale ALF", city:"Orlando", employmentType:"per_diem", startTime:"2026-08-19T06:30", endTime:"2026-08-19T14:30", payRateMin:21, payRateMax:24, payPeriod:"hour", fast:false, summary:"Assisted living, morning shift. Recurring available." },
+    { id:"6", role:"RN", credential:"RN", facility:"Memorial Regional", city:"Miami", employmentType:"travel", startTime:"2026-08-20T07:00", endTime:"2026-08-20T19:00", payRateMin:55, payRateMax:65, payPeriod:"hour", fast:true, summary:"ICU, 13-week travel contract. Strong differential." },
+    { id:"7", role:"PCA", credential:"PCA", facility:"Sunrise SNF", city:"Tampa", employmentType:"per_diem", startTime:"2026-08-16T14:00", endTime:"2026-08-16T22:00", payRateMin:17, payRateMax:20, payPeriod:"hour", fast:false, summary:"Skilled nursing facility, evening. Open all week." },
+    { id:"8", role:"LPN", credential:"LPN", facility:"HCA Florida", city:"Orlando", employmentType:"permanent", startTime:"2026-08-25T08:00", endTime:"2026-08-25T16:00", payRateMin:28, payRateMax:34, payPeriod:"hour", fast:false, summary:"Full-time permanent placement. Benefits eligible." },
+  ];
+
+  const state = { q:"", role:"All", city:"All", type:"All" };
+
+  const uniq = (k) => ["All", ...Array.from(new Set(JOBS.map(j => j[k])))];
+  const fmtType = (t) => t.replace("_"," ");
+  const fmtDate = (iso) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}) +
+      " · " + d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+  };
+
+  function buildChips(containerId, key, values) {
+    const c = document.getElementById(containerId);
+    values.forEach(v => {
+      const b = document.createElement("button");
+      b.className = "chip"; b.textContent = key==="type" && v!=="All" ? fmtType(v) : v;
+      b.setAttribute("aria-pressed", String(state[key]===v));
+      b.onclick = () => { state[key] = v; syncChips(containerId, key); render(); };
+      c.appendChild(b);
+    });
+  }
+  function syncChips(containerId, key) {
+    document.querySelectorAll(`#${containerId} .chip`).forEach(ch => {
+      const val = ch.textContent;
+      const match = (key==="type") ? fmtType(state[key])===val || (state[key]==="All"&&val==="All") : state[key]===val;
+      ch.setAttribute("aria-pressed", String(match));
+    });
+  }
+
+  function filtered() {
+    const q = state.q.trim().toLowerCase();
+    return JOBS.filter(j =>
+      (state.role==="All" || j.role===state.role) &&
+      (state.city==="All" || j.city===state.city) &&
+      (state.type==="All" || j.employmentType===state.type) &&
+      (!q || `${j.role} ${j.facility} ${j.city} ${j.credential}`.toLowerCase().includes(q))
+    );
+  }
+
+  function render() {
+    const rows = filtered();
+    const list = document.getElementById("list");
+    document.getElementById("count").innerHTML = `<b>${rows.length}</b> shift${rows.length===1?"":"s"} matching`;
+    list.innerHTML = "";
+    if (!rows.length) {
+      list.innerHTML = `<div class="empty">No open shifts match those filters. Try widening your search.</div>`;
+      return;
+    }
+    rows.forEach(j => {
+      const li = document.createElement("li");
+      li.className = "job";
+      li.innerHTML = `
+        <div class="job-main">
+          <div class="job-top">
+            <span class="role">${j.role}</span>
+            <span class="badge">${j.credential} required</span>
+            ${j.fast ? `<span class="fast">● Fills fast</span>` : ``}
+          </div>
+          <div class="facility">${j.facility} · ${j.city}, FL</div>
+          <div class="meta">
+            <span>${fmtDate(j.startTime)}–${new Date(j.endTime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}</span>
+            <span class="type">${fmtType(j.employmentType)}</span>
+          </div>
+          <div class="summary">${j.summary}</div>
+        </div>
+        <div class="job-side">
+          <div class="pay">$${j.payRateMin}–$${j.payRateMax}<small>per ${j.payPeriod}</small></div>
+          <button class="apply" type="button">Apply</button>
+          <a class="text-rec" href="#">or text a recruiter</a>
+        </div>
+        <div class="quick">
+          <p>Quick apply — a local recruiter texts you back today. No résumé needed to start.</p>
+          <div class="quick-row">
+            <input type="text" placeholder="First name" aria-label="First name" />
+            <input type="tel" placeholder="Mobile number" aria-label="Mobile number" />
+            <button class="apply" type="button" data-submit>Send</button>
+          </div>
+        </div>`;
+      const applyBtn = li.querySelector(".job-side .apply");
+      applyBtn.onclick = () => li.classList.toggle("open");
+      li.querySelector("[data-submit]").onclick = () => {
+        li.querySelector(".quick").innerHTML = `<p class="done">✓ Got it — a recruiter will text you about the ${j.role} shift at ${j.facility} shortly.</p>`;
+      };
+      list.appendChild(li);
+    });
+  }
+
+  function renderStats() {
+    const open = JOBS.length;
+    const min = Math.min(...JOBS.map(j=>j.payRateMin));
+    const max = Math.max(...JOBS.map(j=>j.payRateMax));
+    const cities = new Set(JOBS.map(j=>j.city)).size;
+    document.getElementById("stat-open").textContent = open;
+    document.getElementById("stat-pay").textContent = `$${min}–$${max}`;
+    document.getElementById("stat-cities").textContent = cities;
+  }
+
+  buildChips("role-filters","role",uniq("role"));
+  buildChips("city-filters","city",uniq("city"));
+  buildChips("type-filters","type",uniq("employmentType"));
+  document.getElementById("q").addEventListener("input", e => { state.q = e.target.value; render(); });
+  renderStats();
+  render();
+</script>

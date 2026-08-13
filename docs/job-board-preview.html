@@ -122,19 +122,20 @@
     border: 0; background: transparent; color: var(--ink);
     font: inherit; padding: 12px 0; width: 100%; outline: none;
   }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip {
-    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
-    background: var(--surface); color: var(--ink-soft);
-    border: 1px solid var(--line); border-radius: 999px; padding: 7px 13px;
-    transition: background .12s, color .12s, border-color .12s;
+  .filters { display: flex; flex-wrap: wrap; gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 5px; flex: 1 1 170px; min-width: 140px; }
+  .field > .lbl { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); font-weight: 600; padding-left: 2px; }
+  .select { position: relative; display: flex; }
+  .select select {
+    appearance: none; -webkit-appearance: none; width: 100%;
+    font: inherit; font-size: 14px; font-weight: 550; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 11px 38px 11px 13px; cursor: pointer; box-shadow: var(--shadow);
+    transition: border-color .12s;
   }
-  .chip:hover { border-color: var(--ink-faint); color: var(--ink); }
-  .chip[aria-pressed="true"] {
-    background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
-  }
-  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .chip-group .lbl { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); margin-right: 2px; }
+  .select select:hover { border-color: var(--ink-faint); }
+  .select select:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; border-color: transparent; }
+  .select .chev { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--ink-faint); }
 
   .result-count { font-size: 13.5px; color: var(--ink-faint); padding: 2px 2px 0; }
   .result-count b { color: var(--ink); font-variant-numeric: tabular-nums; }
@@ -235,9 +236,29 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
       <input id="q" type="search" placeholder="Search role, facility, or city…" aria-label="Search shifts" />
     </label>
-    <div class="chip-group" id="role-filters"><span class="lbl">Role</span></div>
-    <div class="chip-group" id="city-filters"><span class="lbl">City</span></div>
-    <div class="chip-group" id="type-filters"><span class="lbl">Type</span></div>
+    <div class="filters">
+      <div class="field">
+        <span class="lbl">Role</span>
+        <div class="select">
+          <select id="f-role" data-all="All roles" aria-label="Filter by role"></select>
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </div>
+      <div class="field">
+        <span class="lbl">City</span>
+        <div class="select">
+          <select id="f-city" data-all="All cities" aria-label="Filter by city"></select>
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </div>
+      <div class="field">
+        <span class="lbl">Type</span>
+        <div class="select">
+          <select id="f-type" data-all="All types" aria-label="Filter by employment type"></select>
+          <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </div>
+    </div>
   </section>
 
   <div class="wrap">
@@ -270,29 +291,24 @@
   const state = { q:"", role:"All", city:"All", type:"All" };
 
   const uniq = (k) => ["All", ...Array.from(new Set(JOBS.map(j => j[k])))];
-  const fmtType = (t) => t.replace("_"," ");
+  const fmtType = (t) => t.replace("_"," ").replace(/^\w/, c => c.toUpperCase());
   const fmtDate = (iso) => {
     const d = new Date(iso);
     return d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}) +
       " · " + d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
   };
 
-  function buildChips(containerId, key, values) {
-    const c = document.getElementById(containerId);
+  function fillSelect(selectId, key, values) {
+    const sel = document.getElementById(selectId);
+    sel.innerHTML = "";
     values.forEach(v => {
-      const b = document.createElement("button");
-      b.className = "chip"; b.textContent = key==="type" && v!=="All" ? fmtType(v) : v;
-      b.setAttribute("aria-pressed", String(state[key]===v));
-      b.onclick = () => { state[key] = v; syncChips(containerId, key); render(); };
-      c.appendChild(b);
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = v === "All" ? sel.dataset.all : (key === "type" ? fmtType(v) : v);
+      sel.appendChild(o);
     });
-  }
-  function syncChips(containerId, key) {
-    document.querySelectorAll(`#${containerId} .chip`).forEach(ch => {
-      const val = ch.textContent;
-      const match = (key==="type") ? fmtType(state[key])===val || (state[key]==="All"&&val==="All") : state[key]===val;
-      ch.setAttribute("aria-pressed", String(match));
-    });
+    sel.value = state[key];
+    sel.addEventListener("change", (e) => { state[key] = e.target.value; render(); });
   }
 
   function filtered() {
@@ -363,9 +379,9 @@
     document.getElementById("stat-cities").textContent = cities;
   }
 
-  buildChips("role-filters","role",uniq("role"));
-  buildChips("city-filters","city",uniq("city"));
-  buildChips("type-filters","type",uniq("employmentType"));
+  fillSelect("f-role","role",uniq("role"));
+  fillSelect("f-city","city",uniq("city"));
+  fillSelect("f-type","type",uniq("employmentType"));
   document.getElementById("q").addEventListener("input", e => { state.q = e.target.value; render(); });
   renderStats();
   render();

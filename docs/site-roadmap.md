@@ -99,6 +99,34 @@ cleanly across agents/devs with little overlap:
 
 ---
 
+## Build status — Aya feature parity (backend)
+
+Shipped as Edge Functions + migrations (candidate-facing set):
+
+| Aya feature | Status | Where |
+| --- | --- | --- |
+| Public job board + pay | ✅ | `functions/jobs` |
+| Quick-apply lead capture + recruiter SMS | ✅ | `functions/applications` |
+| Candidate portal (profile %, tasks, assignments) | ✅ | `functions/portal` |
+| Registration wizard (profession/specialty/experience) | ✅ | `functions/register` |
+| Self-service (contact, credentials, availability) | ✅ | `functions/account` |
+| Saved searches + job alerts (email on match) | ✅ | `functions/account`, `functions/alerts` + cron |
+| Application status tracking | ✅ | `applications.caregiver_id` → `functions/portal` |
+| "Recommend my recruiter" referrals | ✅ | `functions/account` (`recommendRecruiter`) |
+| Market insights (Aya Index-style) | ✅ | `functions/insights` |
+
+Deferred (not candidate-facing or out of current scope):
+- Native iOS/Android apps → do a **PWA** instead (roadmap Tier 4 #16).
+- Employer/VMS suite (LotusOne, Workforce AI, CoreHire) → the facilities track,
+  intentionally parked until the multi-track homepage.
+- CEU / continuing-education platform.
+- Recruiter-side status console (advancing an application through the pipeline)
+  — the data model supports it; the internal UI isn't built.
+- Auth: candidate endpoints use opaque `portal_token` magic-links; move to
+  Supabase Auth JWT before writes handle anything sensitive.
+
+---
+
 ## Appendix: Aya's logged-in UX patterns (competitive reference)
 
 Observed from Aya's live registration, candidate dashboard, and job-search

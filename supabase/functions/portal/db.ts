@@ -1,6 +1,7 @@
 import { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { Caregiver, CaregiverAvailability, CaregiverCredential } from "../operations/types.ts";
 import {
+  ApplicationStatus,
   PortalSummary,
   PortalTask,
   ProfileSection,
@@ -34,11 +35,12 @@ export async function buildPortalSummary(
   client: SupabaseClient,
   caregiver: Caregiver,
 ): Promise<PortalSummary> {
-  const [credentials, availability, assignments, saved] = await Promise.all([
+  const [credentials, availability, assignments, saved, applications] = await Promise.all([
     fetchCredentials(client, caregiver.id),
     fetchAvailability(client, caregiver.id),
     fetchUpcomingAssignments(client, caregiver.id),
     fetchSavedSearches(client, caregiver.id),
+    fetchApplications(client, caregiver.id),
   ]);
 
   const now = Date.now();
@@ -94,6 +96,7 @@ export async function buildPortalSummary(
     tasks,
     upcomingAssignments: assignments,
     savedSearches: saved,
+    applications,
   };
 }
 
@@ -146,4 +149,20 @@ async function fetchSavedSearches(client: SupabaseClient, caregiverId: string): 
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((s) => ({ id: s.id as string, label: s.label as string, notify: s.notify as boolean }));
+}
+
+async function fetchApplications(client: SupabaseClient, caregiverId: string): Promise<ApplicationStatus[]> {
+  const { data, error } = await client
+    .from("applications")
+    .select("id, role, status, created_at")
+    .eq("caregiver_id", caregiverId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  return (data ?? []).map((a) => ({
+    id: a.id as string,
+    role: (a.role as string | null) ?? null,
+    status: a.status as string,
+    appliedAt: a.created_at as string,
+  }));
 }

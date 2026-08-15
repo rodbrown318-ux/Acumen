@@ -32,6 +32,13 @@ export interface SavedSearch {
   notify: boolean;
 }
 
+export interface ApplicationStatus {
+  id: string;
+  role: string | null;
+  status: string; // new | contacted | screening | placed | rejected | withdrawn
+  appliedAt: string;
+}
+
 export interface PortalSummary {
   firstName: string;
   fullName: string;
@@ -43,4 +50,5 @@ export interface PortalSummary {
   tasks: PortalTask[];
   upcomingAssignments: UpcomingAssignment[];
   savedSearches: SavedSearch[];
+  applications: ApplicationStatus[];
 }

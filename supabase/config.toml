@@ -39,3 +39,22 @@ verify_jwt = false
 # Move to Supabase Auth before this handles writes or sensitive actions.
 [functions.portal]
 verify_jwt = false
+
+# Registration wizard (public POST): creates a caregiver profile + optional
+# credentials/availability, returns a portal magic-link token.
+[functions.register]
+verify_jwt = false
+
+# Candidate self-service writes (portal_token auth): update contact, add
+# credentials, set availability, save/delete searches, refer a friend.
+[functions.account]
+verify_jwt = false
+
+# Job-alerts poll (service-to-service, cron-driven like operations). Matches
+# new open shifts to saved searches and emails caregivers.
+[functions.alerts]
+verify_jwt = false
+
+# Market insights (Aya Index-style), public read-only aggregate stats.
+[functions.insights]
+verify_jwt = false

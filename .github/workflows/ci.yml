@@ -4,8 +4,13 @@ name: CI
 # Deno type-checking (catches the errors we can't run locally) and linting.
 on:
   push:
-    branches: [main, "claude/**"]
+    branches: [main]
   pull_request:
+
+# Cancel an in-flight run when a newer commit is pushed to the same PR/branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   edge-functions:

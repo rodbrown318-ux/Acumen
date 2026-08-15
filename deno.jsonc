@@ -1,12 +1,18 @@
 {
-  // Every agent action handler must return a Promise (see the ActionHandlers
-  // type in supabase/functions/_shared/handler.ts), so trivial and stub
-  // handlers are intentionally `async` even without an `await`. The
-  // require-await lint rule fights that contract across every agent, so it is
-  // disabled project-wide; genuinely accidental async is caught in review.
   "lint": {
     "rules": {
-      "exclude": ["require-await"]
+      "exclude": [
+        // Every agent action handler must return a Promise (see the
+        // ActionHandlers type in supabase/functions/_shared/handler.ts), so
+        // trivial and stub handlers are intentionally `async` without an
+        // `await`. This rule fights that contract across every agent.
+        "require-await",
+        // These are Supabase Edge Functions on Deno: imports are jsr:/npm:/
+        // https: specifiers by design (see CLAUDE.md "Runtime notes"), not a
+        // package.json. no-import-prefix wants an import map we deliberately
+        // don't use.
+        "no-import-prefix"
+      ]
     }
   }
 }

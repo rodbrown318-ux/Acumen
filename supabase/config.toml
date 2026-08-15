@@ -33,3 +33,9 @@ verify_jwt = false
 # slug. Saves the lead, then fires a best-effort recruiter SMS.
 [functions.applications]
 verify_jwt = false
+
+# Candidate portal (read-only). Also candidate-facing: verify_jwt stays false
+# because identity comes from an opaque per-caregiver portal_token, not a JWT.
+# Move to Supabase Auth before this handles writes or sensitive actions.
+[functions.portal]
+verify_jwt = false

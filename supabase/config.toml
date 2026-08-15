@@ -58,3 +58,9 @@ verify_jwt = false
 # Market insights (Aya Index-style), public read-only aggregate stats.
 [functions.insights]
 verify_jwt = false
+
+# "Request Staff" intake (public POST): the facility/client side of the
+# marketplace. Saves the request + finds/creates the client, then emails the
+# agency. Tenant from the posted slug (multi-tenant / white-label ready).
+[functions.staffing]
+verify_jwt = false

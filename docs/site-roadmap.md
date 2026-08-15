@@ -114,11 +114,24 @@ Shipped as Edge Functions + migrations (candidate-facing set):
 | Application status tracking | ✅ | `applications.caregiver_id` → `functions/portal` |
 | "Recommend my recruiter" referrals | ✅ | `functions/account` (`recommendRecruiter`) |
 | Market insights (Aya Index-style) | ✅ | `functions/insights` |
+| **Request Staff** intake (facility/client side) | ✅ | `functions/staffing` + `clients` / `staff_requests` |
 
-Deferred (not candidate-facing or out of current scope):
+### Toward the full vision (two-sided marketplace + white-label)
+
+The goal is one place for **caregivers and facilities/clients**, then letting
+other agencies run their own company on the platform. Progress:
+- **Caregiver side** — board, apply, portal, registration, alerts, referrals. ✅
+- **Facility side** — `staffing` intake now captures staff requests and builds a
+  `clients` list per tenant. ✅ (Next: internal tooling to turn an approved
+  `staff_request` into open `shifts`, closing the loop end to end.)
+- **White-label** — already structural: every table is `tenant_id`-scoped and
+  every endpoint resolves tenant by slug, so a new agency = a new `tenants` row
+  + `integrations/<slug>/` config, no code changes (see CLAUDE.md).
+
+Deferred (out of current scope):
 - Native iOS/Android apps → do a **PWA** instead (roadmap Tier 4 #16).
-- Employer/VMS suite (LotusOne, Workforce AI, CoreHire) → the facilities track,
-  intentionally parked until the multi-track homepage.
+- Full employer/VMS suite (LotusOne, Workforce AI, CoreHire) — the deeper
+  facility software, beyond the intake that's now live.
 - CEU / continuing-education platform.
 - Recruiter-side status console (advancing an application through the pipeline)
   — the data model supports it; the internal UI isn't built.

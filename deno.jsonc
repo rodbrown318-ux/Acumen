@@ -1,0 +1,12 @@
+{
+  // Every agent action handler must return a Promise (see the ActionHandlers
+  // type in supabase/functions/_shared/handler.ts), so trivial and stub
+  // handlers are intentionally `async` even without an `await`. The
+  // require-await lint rule fights that contract across every agent, so it is
+  // disabled project-wide; genuinely accidental async is caught in review.
+  "lint": {
+    "rules": {
+      "exclude": ["require-await"]
+    }
+  }
+}

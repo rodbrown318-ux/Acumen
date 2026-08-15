@@ -39,21 +39,23 @@ export async function getPublicOpenShifts(
   filters: JobFilters = {},
   limit = 200,
 ): Promise<PublicJob[]> {
+  // Filters (eq/ilike) must be applied while `query` is still a filter builder,
+  // before order()/limit() turn it into a transform builder.
   let query = client
     .from("shifts")
     .select(PUBLIC_COLUMNS)
     .eq("tenant_id", tenantId)
     .eq("status", "open")
-    .eq("is_public", true)
-    .order("start_time", { ascending: true })
-    .limit(limit);
+    .eq("is_public", true);
 
   if (filters.role) query = query.ilike("role_required", `%${filters.role}%`);
   if (filters.city) query = query.ilike("city", `%${filters.city}%`);
   if (filters.credential) query = query.ilike("required_credential", `%${filters.credential}%`);
   if (filters.employmentType) query = query.eq("employment_type", filters.employmentType);
 
-  const { data, error } = await query;
+  const { data, error } = await query
+    .order("start_time", { ascending: true })
+    .limit(limit);
   if (error) throw error;
 
   return (data ?? []).map((row) => ({

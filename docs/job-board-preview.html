@@ -310,12 +310,18 @@
 </footer>
 
 <script>
-  // Tenant slug the real endpoints key off of.
-  const TENANT = "complete-staffing";
+  // Live-endpoint config. Set window.CS_API_BASE (e.g. your Supabase project
+  // URL) before this script to point at the deployed functions; left empty it
+  // resolves same-origin (/functions/v1/...). If the call fails — no backend,
+  // CSP sandbox, offline — the board falls back to SAMPLE_JOBS below so the
+  // prototype still demonstrates.
+  const CONFIG = { apiBase: (window.CS_API_BASE || "").replace(/\/$/, ""), tenant: "complete-staffing" };
+  const TENANT = CONFIG.tenant;
 
-  // Mock data in the exact PublicJob shape returned by supabase/functions/jobs
-  // (now including `openings`, from shifts.slots).
-  const JOBS = [
+  // Sample data in the exact PublicJob shape returned by supabase/functions/jobs
+  // (including `openings`, from shifts.slots). Used only when the live endpoint
+  // is unreachable.
+  const SAMPLE_JOBS = [
     { id:"1", role:"CNA", credential:"CNA", facility:"Orlando Health", city:"Orlando", employmentType:"per_diem", startTime:"2026-08-16T07:00", endTime:"2026-08-16T19:00", payRateMin:22, payRateMax:26, payPeriod:"hour", openings:2, fast:true, summary:"Day shift, 12h. Med-surg floor. Immediate need." },
     { id:"2", role:"RN", credential:"RN", facility:"AdventHealth Tampa", city:"Tampa", employmentType:"travel", startTime:"2026-08-18T19:00", endTime:"2026-08-19T07:00", payRateMin:48, payRateMax:58, payPeriod:"hour", openings:1, fast:false, summary:"Med-surg / tele. 13-week contract, nights." },
     { id:"3", role:"HHA", credential:"HHA", facility:"Comfort Home Care", city:"Miami", employmentType:"per_diem", startTime:"2026-08-15T09:00", endTime:"2026-08-15T15:00", payRateMin:18, payRateMax:21, payPeriod:"hour", openings:1, fast:false, summary:"In-home care visit, one client, Kendall area." },
@@ -326,8 +332,45 @@
     { id:"8", role:"LPN", credential:"LPN", facility:"HCA Florida", city:"Orlando", employmentType:"permanent", startTime:"2026-08-25T08:00", endTime:"2026-08-25T16:00", payRateMin:28, payRateMax:34, payPeriod:"hour", openings:1, fast:false, summary:"Full-time permanent placement. Benefits eligible." },
   ];
 
+  // Populated at startup from the live endpoint (or SAMPLE_JOBS on failure).
+  let JOBS = [];
+  let usingSample = false;
+
   const state = { q:"", role:"All", city:"All", type:"All" };
   const savedSearches = [];
+
+  // Normalize a PublicJob into what the cards need: derive `fast` (starts
+  // within 48h) when the endpoint doesn't carry that UI flag.
+  const normalize = (j) => ({
+    ...j,
+    fast: typeof j.fast === "boolean" ? j.fast : (new Date(j.startTime) - Date.now() < 48 * 3.6e6),
+  });
+
+  async function loadJobs() {
+    const url = `${CONFIG.apiBase}/functions/v1/jobs?tenant=${encodeURIComponent(CONFIG.tenant)}`;
+    try {
+      const res = await fetch(url, { headers: { "Accept": "application/json" } });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if (!data.ok || !Array.isArray(data.jobs)) throw new Error("unexpected payload");
+      usingSample = false;
+      return data.jobs.map(normalize);
+    } catch (err) {
+      console.warn("Live /jobs unavailable — showing sample data:", err.message);
+      usingSample = true;
+      return SAMPLE_JOBS.map(normalize);
+    }
+  }
+
+  // Deep-link support: the homepage links here with ?role=&city=&type=&q=.
+  function readUrlFilters() {
+    const p = new URLSearchParams(location.search);
+    const cap = (s) => s ? s[0].toUpperCase() + s.slice(1).toLowerCase() : s;
+    if (p.get("role")) state.role = p.get("role").toUpperCase();
+    if (p.get("city")) state.city = cap(p.get("city"));
+    if (p.get("type")) state.type = p.get("type").toLowerCase();
+    if (p.get("q")) state.q = p.get("q");
+  }
 
   const uniq = (k) => ["All", ...Array.from(new Set(JOBS.map(j => j[k])))];
   const fmtType = (t) => t.replace("_"," ").replace(/^\w/, c => c.toUpperCase());
@@ -417,10 +460,11 @@
     });
   }
 
-  // Quick-apply. In production this POSTs the payload below to the public
-  // applications Edge Function; the endpoint saves the lead, then texts the
-  // on-call recruiter. Here we build the real payload and confirm inline.
-  function submitApply(li, j) {
+  // Quick-apply. POSTs to the public applications Edge Function, which saves
+  // the lead and texts the on-call recruiter. If the endpoint is unreachable
+  // (no backend / sandbox), we still confirm optimistically so the prototype
+  // demonstrates — the lead attempt is logged for wiring later.
+  async function submitApply(li, j) {
     const name = li.querySelector("[data-name]");
     const phone = li.querySelector("[data-phone]");
     const digits = phone.value.replace(/[^\d]/g, "");
@@ -439,9 +483,19 @@
       role: j.role,
       source: "job_board",
     };
-    // fetch(`/functions/v1/applications`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) })
-    console.log("POST /functions/v1/applications", payload);
 
+    const btn = li.querySelector("[data-submit]");
+    btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const res = await fetch(`${CONFIG.apiBase}/functions/v1/applications`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+    } catch (err) {
+      console.warn("Live /applications unavailable — captured locally:", err.message, payload);
+    }
     li.querySelector(".quick").innerHTML =
       `<p class="done">✓ Got it, ${escapeHtml(payload.firstName)} — a local recruiter will text you about the ${j.role} shift at ${escapeHtml(j.facility)} today.</p>`;
   }
@@ -479,18 +533,27 @@
   function escapeHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
   function renderStats() {
-    const open = JOBS.length;
-    const min = Math.min(...JOBS.map(j=>j.payRateMin));
-    const max = Math.max(...JOBS.map(j=>j.payRateMax));
-    const cities = new Set(JOBS.map(j=>j.city)).size;
-    document.getElementById("stat-open").textContent = open;
-    document.getElementById("stat-pay").textContent = `$${min}–$${max}`;
+    if (!JOBS.length) {
+      document.getElementById("stat-open").textContent = "0";
+      document.getElementById("stat-pay").textContent = "—";
+      document.getElementById("stat-cities").textContent = "0";
+      return;
+    }
+    const min = Math.min(...JOBS.map(j=>j.payRateMin).filter(n=>n!=null));
+    const max = Math.max(...JOBS.map(j=>j.payRateMax).filter(n=>n!=null));
+    const cities = new Set(JOBS.map(j=>j.city).filter(Boolean)).size;
+    document.getElementById("stat-open").textContent = JOBS.length;
+    document.getElementById("stat-pay").textContent = isFinite(min) ? `$${min}–$${max}` : "—";
     document.getElementById("stat-cities").textContent = cities;
   }
 
-  fillSelect("f-role","role",uniq("role"));
-  fillSelect("f-city","city",uniq("city"));
-  fillSelect("f-type","type",uniq("employmentType"));
+  // If we fell back to sample data, say so honestly in the disclaimer.
+  function markDataSource() {
+    if (!usingSample) return;
+    const d = document.querySelector(".disclaimer");
+    if (d) d.textContent = "Showing sample shifts (live listings connect once the /jobs endpoint is deployed). " + d.textContent;
+  }
+
   document.getElementById("q").addEventListener("input", e => { state.q = e.target.value; render(); });
   document.getElementById("save-search").addEventListener("click", () => {
     const label = searchLabel();
@@ -498,6 +561,17 @@
     savedSearches.push({ label, state: { ...state } });
     renderSaved();
   });
-  renderStats();
-  render();
+
+  async function init() {
+    readUrlFilters();
+    JOBS = await loadJobs();
+    fillSelect("f-role","role",uniq("role"));
+    fillSelect("f-city","city",uniq("city"));
+    fillSelect("f-type","type",uniq("employmentType"));
+    syncControls();
+    markDataSource();
+    renderStats();
+    render();
+  }
+  init();
 </script>

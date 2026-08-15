@@ -184,8 +184,8 @@
       <a href="#roles">Roles</a>
       <a href="#why">Why us</a>
       <a href="#train">Get certified</a>
-      <a class="btn btn-ghost" href="#">Log in</a>
-      <a class="btn btn-primary cta-nav" href="#find">Browse shifts</a>
+      <a class="btn btn-ghost" href="portal-preview.html">Log in</a>
+      <a class="btn btn-primary cta-nav" href="job-board-preview.html">Browse shifts</a>
     </nav>
   </div>
 </header>
@@ -200,15 +200,15 @@
       <div class="search-card">
         <div class="search-fields">
           <label class="sf">
-            <select aria-label="Role"><option>Any role</option><option>CNA</option><option>HHA</option><option>PCA</option><option>LPN</option><option>RN</option></select>
+            <select id="hero-role" aria-label="Role"><option value="">Any role</option><option>CNA</option><option>HHA</option><option>PCA</option><option>LPN</option><option>RN</option></select>
             <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
           </label>
           <label class="sf">
-            <select aria-label="City"><option>All Florida</option><option>Orlando</option><option>Tampa</option><option>Miami</option><option>Jacksonville</option></select>
+            <select id="hero-city" aria-label="City"><option value="">All Florida</option><option>Orlando</option><option>Tampa</option><option>Miami</option><option>Jacksonville</option></select>
             <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
           </label>
         </div>
-        <a class="btn btn-primary" href="#">Browse open shifts →</a>
+        <a class="btn btn-primary" id="hero-go" href="job-board-preview.html">Browse open shifts →</a>
       </div>
 
       <div class="microtrust">
@@ -307,7 +307,7 @@
     <div class="final">
       <h2>Get first access to Florida shifts.</h2>
       <p>Join the network now while we’re onboarding caregivers. Be first in line as new shifts open across the state.</p>
-      <a class="btn btn-primary btn-lg" href="#">Browse open shifts →</a>
+      <a class="btn btn-primary btn-lg" href="job-board-preview.html">Browse open shifts →</a>
     </div>
   </div>
 </section>
@@ -315,7 +315,7 @@
 <footer class="site-foot">
   <div class="wrap foot-grid">
     <div class="brand"><span class="mark">CS</span><span>Complete Staffing<small>Florida healthcare careers</small></span></div>
-    <div class="col"><h4>For caregivers</h4><a href="#find">Browse shifts</a><a href="#how">How it works</a><a href="#train">Get certified</a><a href="#">Log in</a></div>
+    <div class="col"><h4>For caregivers</h4><a href="job-board-preview.html">Browse shifts</a><a href="#how">How it works</a><a href="#train">Get certified</a><a href="portal-preview.html">Log in</a></div>
     <div class="col"><h4>Roles</h4><a href="#">CNA jobs</a><a href="#">HHA jobs</a><a href="#">LPN jobs</a><a href="#">RN jobs</a></div>
     <div class="col"><h4>Company</h4><a href="#">About</a><a href="#">Contact</a><a href="#">Privacy</a></div>
   </div>
@@ -323,30 +323,68 @@
 </footer>
 
 <script>
-  // Rotating "live openings" preview in the hero — same PublicJob shape the
-  // /jobs endpoint returns, so this drops onto real data later.
-  const SHIFTS = [
-    { role: "CNA", where: "Orlando Health · Orlando", pay: "$22–26", tag: "Per diem · fills fast" },
-    { role: "RN", where: "AdventHealth · Tampa", pay: "$48–58", tag: "Travel · 13 wks" },
-    { role: "LPN", where: "Baptist Health · Jacksonville", pay: "$30–36", tag: "Contract · evenings" },
-    { role: "HHA", where: "Comfort Home Care · Miami", pay: "$18–21", tag: "Per diem" },
-    { role: "CNA", where: "Brookdale ALF · Orlando", pay: "$21–24", tag: "Per diem · recurring" },
+  // Live-endpoint config (see the board's notes). Set window.CS_API_BASE to the
+  // deployed Supabase URL; empty resolves same-origin. The board lives at
+  // BOARD_URL — the hero search deep-links into it with ?role=&city=.
+  const CONFIG = { apiBase: (window.CS_API_BASE || "").replace(/\/$/, ""), tenant: "complete-staffing" };
+  const BOARD_URL = "job-board-preview.html";
+
+  // Hero search -> board deep link.
+  const heroRole = document.getElementById("hero-role");
+  const heroCity = document.getElementById("hero-city");
+  const heroGo = document.getElementById("hero-go");
+  function boardUrl() {
+    const p = new URLSearchParams();
+    if (heroRole.value) p.set("role", heroRole.value);
+    if (heroCity.value) p.set("city", heroCity.value);
+    const qs = p.toString();
+    return qs ? `${BOARD_URL}?${qs}` : BOARD_URL;
+  }
+  const syncHref = () => heroGo.setAttribute("href", boardUrl());
+  heroRole.addEventListener("change", syncHref);
+  heroCity.addEventListener("change", syncHref);
+  syncHref();
+
+  // Live-openings preview. Pulls the real /jobs feed; falls back to sample
+  // shifts (same PublicJob shape) when the endpoint isn't reachable yet.
+  const SAMPLE = [
+    { role: "CNA", facility: "Orlando Health", city: "Orlando", payRateMin: 22, payRateMax: 26, employmentType: "per_diem" },
+    { role: "RN", facility: "AdventHealth Tampa", city: "Tampa", payRateMin: 48, payRateMax: 58, employmentType: "travel" },
+    { role: "LPN", facility: "Baptist Health", city: "Jacksonville", payRateMin: 30, payRateMax: 36, employmentType: "contract" },
+    { role: "HHA", facility: "Comfort Home Care", city: "Miami", payRateMin: 18, payRateMax: 21, employmentType: "per_diem" },
+    { role: "CNA", facility: "Brookdale ALF", city: "Orlando", payRateMin: 21, payRateMax: 24, employmentType: "per_diem" },
   ];
-  document.getElementById("live-count").textContent = SHIFTS.length + " now";
-  let idx = 0;
   const box = document.getElementById("live-shifts");
+  const fmtType = (t) => (t || "").replace("_", " ").replace(/^\w/, (c) => c.toUpperCase());
   const card = (s) => `
     <div class="shift">
-      <div class="r"><span class="role">${s.role}</span><span class="pay">${s.pay}/hr</span></div>
-      <div class="sub">${s.where}</div>
-      <span class="tag">${s.tag}</span>
+      <div class="r"><span class="role">${s.role}</span><span class="pay">$${s.payRateMin}–${s.payRateMax}/hr</span></div>
+      <div class="sub">${s.facility} · ${s.city}</div>
+      <span class="tag">${fmtType(s.employmentType)}</span>
     </div>`;
-  function paint() {
-    const a = SHIFTS[idx % SHIFTS.length];
-    const b = SHIFTS[(idx + 1) % SHIFTS.length];
-    box.innerHTML = card(a) + card(b);
+
+  async function loadLive() {
+    try {
+      const res = await fetch(`${CONFIG.apiBase}/functions/v1/jobs?tenant=${encodeURIComponent(CONFIG.tenant)}`, { headers: { "Accept": "application/json" } });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if (!data.ok || !Array.isArray(data.jobs) || !data.jobs.length) throw new Error("no jobs");
+      return data.jobs;
+    } catch (err) {
+      console.warn("Live /jobs unavailable — hero showing sample shifts:", err.message);
+      return SAMPLE;
+    }
   }
-  paint();
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (!reduce) setInterval(() => { idx = (idx + 1) % SHIFTS.length; paint(); }, 3200);
+
+  (async () => {
+    const shifts = await loadLive();
+    document.getElementById("live-count").textContent = shifts.length + " now";
+    let idx = 0;
+    const paint = () => {
+      box.innerHTML = card(shifts[idx % shifts.length]) + card(shifts[(idx + 1) % shifts.length]);
+    };
+    paint();
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduce && shifts.length > 2) setInterval(() => { idx = (idx + 1) % shifts.length; paint(); }, 3200);
+  })();
 </script>

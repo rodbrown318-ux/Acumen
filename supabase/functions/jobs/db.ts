@@ -5,7 +5,7 @@ import { JobFilters, PublicJob, PublicTenant } from "./types.ts";
 // Kept as an explicit whitelist (not `*`) so a future column can't leak by
 // accident.
 const PUBLIC_COLUMNS =
-  "id, client_site, city, role_required, required_credential, employment_type, start_time, end_time, pay_rate_min, pay_rate_max, pay_period, public_summary";
+  "id, client_site, city, role_required, required_credential, employment_type, start_time, end_time, pay_rate_min, pay_rate_max, pay_period, slots, public_summary";
 
 /**
  * Resolve a tenant from a public `?tenant=` slug. Unlike the header-based
@@ -68,6 +68,7 @@ export async function getPublicOpenShifts(
     payRateMin: (row.pay_rate_min as number | null) ?? null,
     payRateMax: (row.pay_rate_max as number | null) ?? null,
     payPeriod: (row.pay_period as string | null) ?? null,
+    openings: (row.slots as number | null) ?? 1,
     summary: (row.public_summary as string | null) ?? null,
   }));
 }

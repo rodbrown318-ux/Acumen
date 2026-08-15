@@ -19,6 +19,11 @@ alter table public.shifts
   -- (e.g. a confidential placement). Filled/offered shifts are excluded by the
   -- endpoint regardless of this flag.
   add column if not exists is_public boolean not null default true,
+  -- How many caregivers this posting needs (a facility may want 2 CNAs for the
+  -- same window). Shown as "# openings" on the board; the matcher still fills
+  -- one assigned_caregiver_id per shift row, so multi-slot postings are for
+  -- display until per-slot assignment lands.
+  add column if not exists slots smallint not null default 1 check (slots >= 1),
   -- Short candidate-facing blurb; never contains internal notes.
   add column if not exists public_summary text;
 

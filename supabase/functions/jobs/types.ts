@@ -15,6 +15,7 @@ export interface PublicJob {
   payRateMin: number | null;
   payRateMax: number | null;
   payPeriod: string | null;
+  openings: number; // shifts.slots
   summary: string | null; // shifts.public_summary
 }
 

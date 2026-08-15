@@ -27,3 +27,9 @@ verify_jwt = false
 # an anonymous job seeker; tenant identity comes from a ?tenant= query param.
 [functions.jobs]
 verify_jwt = false
+
+# Public quick-apply intake for the job board. Also candidate-facing (not an
+# agent): verify_jwt stays false and tenant identity comes from the posted
+# slug. Saves the lead, then fires a best-effort recruiter SMS.
+[functions.applications]
+verify_jwt = false

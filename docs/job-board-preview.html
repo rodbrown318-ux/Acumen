@@ -137,8 +137,33 @@
   .select select:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; border-color: transparent; }
   .select .chev { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--ink-faint); }
 
-  .result-count { font-size: 13.5px; color: var(--ink-faint); padding: 2px 2px 0; }
+  .results-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 2px 0; flex-wrap: wrap; }
+  .result-count { font-size: 13.5px; color: var(--ink-faint); }
   .result-count b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .save-search {
+    font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: transparent; color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    border-radius: 999px; padding: 6px 13px; transition: background .12s;
+  }
+  .save-search:hover { background: var(--accent-soft); }
+  .saved { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 2px 0; }
+  .saved .pill {
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    font-size: 12.5px; font-weight: 550; color: var(--ink-soft);
+    background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 6px 6px 11px;
+  }
+  .saved .pill:hover { border-color: var(--ink-faint); color: var(--ink); }
+  .saved .pill .bell { color: var(--accent); }
+  .saved .pill .x {
+    font: inherit; font-size: 15px; line-height: 1; cursor: pointer; border: 0;
+    background: transparent; color: var(--ink-faint); padding: 0 4px; border-radius: 5px;
+  }
+  .saved .pill .x:hover { color: var(--warm); }
+  .disclaimer { font-size: 12px; color: var(--ink-faint); margin: 10px 2px 0; font-style: italic; }
+  .meta .openings { color: var(--ink-soft); }
 
   /* ---- Job list ---- */
   .list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 40px; list-style: none; margin: 12px 0 0; }
@@ -262,33 +287,47 @@
   </section>
 
   <div class="wrap">
-    <div class="result-count" id="count" aria-live="polite"></div>
+    <div class="results-head">
+      <div class="result-count" id="count" aria-live="polite"></div>
+      <button class="save-search" id="save-search" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v16l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>
+        Save this search
+      </button>
+    </div>
+    <div class="saved" id="saved" hidden></div>
+    <p class="disclaimer">Pay ranges are approximate — your recruiter confirms exact pay, differentials and details before you start.</p>
     <ul class="list" id="list"></ul>
   </div>
 </main>
 
 <footer class="note">
   <div class="wrap">
-    Prototype for <b>completestaffing.org</b> · powered by the public
-    <code>GET /functions/v1/jobs?tenant=complete-staffing</code> endpoint in this repo.
+    Prototype for <b>completestaffing.org</b> · listings from
+    <code>GET /functions/v1/jobs</code>, quick-apply posts to
+    <code>POST /functions/v1/applications</code> (both in this repo).
     Shifts shown are sample data.
   </div>
 </footer>
 
 <script>
-  // Mock data in the exact PublicJob shape returned by supabase/functions/jobs.
+  // Tenant slug the real endpoints key off of.
+  const TENANT = "complete-staffing";
+
+  // Mock data in the exact PublicJob shape returned by supabase/functions/jobs
+  // (now including `openings`, from shifts.slots).
   const JOBS = [
-    { id:"1", role:"CNA", credential:"CNA", facility:"Orlando Health", city:"Orlando", employmentType:"per_diem", startTime:"2026-08-16T07:00", endTime:"2026-08-16T19:00", payRateMin:22, payRateMax:26, payPeriod:"hour", fast:true, summary:"Day shift, 12h. Med-surg floor. Immediate need." },
-    { id:"2", role:"RN", credential:"RN", facility:"AdventHealth Tampa", city:"Tampa", employmentType:"travel", startTime:"2026-08-18T19:00", endTime:"2026-08-19T07:00", payRateMin:48, payRateMax:58, payPeriod:"hour", fast:false, summary:"Med-surg / tele. 13-week contract, nights." },
-    { id:"3", role:"HHA", credential:"HHA", facility:"Comfort Home Care", city:"Miami", employmentType:"per_diem", startTime:"2026-08-15T09:00", endTime:"2026-08-15T15:00", payRateMin:18, payRateMax:21, payPeriod:"hour", fast:false, summary:"In-home care visit, one client, Kendall area." },
-    { id:"4", role:"LPN", credential:"LPN", facility:"Baptist Health", city:"Jacksonville", employmentType:"contract", startTime:"2026-08-17T15:00", endTime:"2026-08-17T23:00", payRateMin:30, payRateMax:36, payPeriod:"hour", fast:true, summary:"Evening shift. Skilled nursing wing." },
-    { id:"5", role:"CNA", credential:"CNA", facility:"Brookdale ALF", city:"Orlando", employmentType:"per_diem", startTime:"2026-08-19T06:30", endTime:"2026-08-19T14:30", payRateMin:21, payRateMax:24, payPeriod:"hour", fast:false, summary:"Assisted living, morning shift. Recurring available." },
-    { id:"6", role:"RN", credential:"RN", facility:"Memorial Regional", city:"Miami", employmentType:"travel", startTime:"2026-08-20T07:00", endTime:"2026-08-20T19:00", payRateMin:55, payRateMax:65, payPeriod:"hour", fast:true, summary:"ICU, 13-week travel contract. Strong differential." },
-    { id:"7", role:"PCA", credential:"PCA", facility:"Sunrise SNF", city:"Tampa", employmentType:"per_diem", startTime:"2026-08-16T14:00", endTime:"2026-08-16T22:00", payRateMin:17, payRateMax:20, payPeriod:"hour", fast:false, summary:"Skilled nursing facility, evening. Open all week." },
-    { id:"8", role:"LPN", credential:"LPN", facility:"HCA Florida", city:"Orlando", employmentType:"permanent", startTime:"2026-08-25T08:00", endTime:"2026-08-25T16:00", payRateMin:28, payRateMax:34, payPeriod:"hour", fast:false, summary:"Full-time permanent placement. Benefits eligible." },
+    { id:"1", role:"CNA", credential:"CNA", facility:"Orlando Health", city:"Orlando", employmentType:"per_diem", startTime:"2026-08-16T07:00", endTime:"2026-08-16T19:00", payRateMin:22, payRateMax:26, payPeriod:"hour", openings:2, fast:true, summary:"Day shift, 12h. Med-surg floor. Immediate need." },
+    { id:"2", role:"RN", credential:"RN", facility:"AdventHealth Tampa", city:"Tampa", employmentType:"travel", startTime:"2026-08-18T19:00", endTime:"2026-08-19T07:00", payRateMin:48, payRateMax:58, payPeriod:"hour", openings:1, fast:false, summary:"Med-surg / tele. 13-week contract, nights." },
+    { id:"3", role:"HHA", credential:"HHA", facility:"Comfort Home Care", city:"Miami", employmentType:"per_diem", startTime:"2026-08-15T09:00", endTime:"2026-08-15T15:00", payRateMin:18, payRateMax:21, payPeriod:"hour", openings:1, fast:false, summary:"In-home care visit, one client, Kendall area." },
+    { id:"4", role:"LPN", credential:"LPN", facility:"Baptist Health", city:"Jacksonville", employmentType:"contract", startTime:"2026-08-17T15:00", endTime:"2026-08-17T23:00", payRateMin:30, payRateMax:36, payPeriod:"hour", openings:2, fast:true, summary:"Evening shift. Skilled nursing wing." },
+    { id:"5", role:"CNA", credential:"CNA", facility:"Brookdale ALF", city:"Orlando", employmentType:"per_diem", startTime:"2026-08-19T06:30", endTime:"2026-08-19T14:30", payRateMin:21, payRateMax:24, payPeriod:"hour", openings:3, fast:false, summary:"Assisted living, morning shift. Recurring available." },
+    { id:"6", role:"RN", credential:"RN", facility:"Memorial Regional", city:"Miami", employmentType:"travel", startTime:"2026-08-20T07:00", endTime:"2026-08-20T19:00", payRateMin:55, payRateMax:65, payPeriod:"hour", openings:1, fast:true, summary:"ICU, 13-week travel contract. Strong differential." },
+    { id:"7", role:"PCA", credential:"PCA", facility:"Sunrise SNF", city:"Tampa", employmentType:"per_diem", startTime:"2026-08-16T14:00", endTime:"2026-08-16T22:00", payRateMin:17, payRateMax:20, payPeriod:"hour", openings:2, fast:false, summary:"Skilled nursing facility, evening. Open all week." },
+    { id:"8", role:"LPN", credential:"LPN", facility:"HCA Florida", city:"Orlando", employmentType:"permanent", startTime:"2026-08-25T08:00", endTime:"2026-08-25T16:00", payRateMin:28, payRateMax:34, payPeriod:"hour", openings:1, fast:false, summary:"Full-time permanent placement. Benefits eligible." },
   ];
 
   const state = { q:"", role:"All", city:"All", type:"All" };
+  const savedSearches = [];
 
   const uniq = (k) => ["All", ...Array.from(new Set(JOBS.map(j => j[k])))];
   const fmtType = (t) => t.replace("_"," ").replace(/^\w/, c => c.toUpperCase());
@@ -296,6 +335,15 @@
     const d = new Date(iso);
     return d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}) +
       " · " + d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+  };
+  // Derive an Aya-style shift pattern ("12h Day") from the window. Length comes
+  // from start/end; the day-part from the start hour.
+  const shiftPattern = (j) => {
+    const start = new Date(j.startTime), end = new Date(j.endTime);
+    const hours = Math.round((end - start) / 3.6e6);
+    const h = start.getHours();
+    const part = h >= 5 && h < 14 ? "Day" : h >= 14 && h < 20 ? "Evening" : "Night";
+    return `${hours}h ${part}`;
   };
 
   function fillSelect(selectId, key, values) {
@@ -343,7 +391,9 @@
           <div class="facility">${j.facility} · ${j.city}, FL</div>
           <div class="meta">
             <span>${fmtDate(j.startTime)}–${new Date(j.endTime).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}</span>
+            <span class="pattern">${shiftPattern(j)}</span>
             <span class="type">${fmtType(j.employmentType)}</span>
+            <span class="openings">${j.openings} opening${j.openings===1?"":"s"}</span>
           </div>
           <div class="summary">${j.summary}</div>
         </div>
@@ -355,19 +405,78 @@
         <div class="quick">
           <p>Quick apply — a local recruiter texts you back today. No résumé needed to start.</p>
           <div class="quick-row">
-            <input type="text" placeholder="First name" aria-label="First name" />
-            <input type="tel" placeholder="Mobile number" aria-label="Mobile number" />
+            <input type="text" placeholder="First name" aria-label="First name" data-name />
+            <input type="tel" placeholder="Mobile number" aria-label="Mobile number" data-phone />
             <button class="apply" type="button" data-submit>Send</button>
           </div>
         </div>`;
       const applyBtn = li.querySelector(".job-side .apply");
       applyBtn.onclick = () => li.classList.toggle("open");
-      li.querySelector("[data-submit]").onclick = () => {
-        li.querySelector(".quick").innerHTML = `<p class="done">✓ Got it — a recruiter will text you about the ${j.role} shift at ${j.facility} shortly.</p>`;
-      };
+      li.querySelector("[data-submit]").onclick = () => submitApply(li, j);
       list.appendChild(li);
     });
   }
+
+  // Quick-apply. In production this POSTs the payload below to the public
+  // applications Edge Function; the endpoint saves the lead, then texts the
+  // on-call recruiter. Here we build the real payload and confirm inline.
+  function submitApply(li, j) {
+    const name = li.querySelector("[data-name]");
+    const phone = li.querySelector("[data-phone]");
+    const digits = phone.value.replace(/[^\d]/g, "");
+    let bad = false;
+    [[name, name.value.trim().length > 0], [phone, digits.length >= 10]].forEach(([el, ok]) => {
+      el.style.borderColor = ok ? "" : "var(--warm)";
+      if (!ok) bad = true;
+    });
+    if (bad) return;
+
+    const payload = {
+      tenant: TENANT,
+      firstName: name.value.trim(),
+      phone: phone.value.trim(),
+      shiftId: j.id,
+      role: j.role,
+      source: "job_board",
+    };
+    // fetch(`/functions/v1/applications`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) })
+    console.log("POST /functions/v1/applications", payload);
+
+    li.querySelector(".quick").innerHTML =
+      `<p class="done">✓ Got it, ${escapeHtml(payload.firstName)} — a local recruiter will text you about the ${j.role} shift at ${escapeHtml(j.facility)} today.</p>`;
+  }
+
+  function searchLabel() {
+    const parts = [];
+    if (state.role !== "All") parts.push(state.role);
+    if (state.city !== "All") parts.push(state.city);
+    if (state.type !== "All") parts.push(fmtType(state.type));
+    if (state.q.trim()) parts.push(`"${state.q.trim()}"`);
+    return parts.length ? parts.join(" · ") : "All open shifts";
+  }
+
+  function renderSaved() {
+    const box = document.getElementById("saved");
+    box.hidden = savedSearches.length === 0;
+    box.innerHTML = "";
+    savedSearches.forEach((s, i) => {
+      const pill = document.createElement("span");
+      pill.className = "pill";
+      pill.innerHTML = `<svg class="bell" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span>${escapeHtml(s.label)}</span><button class="x" type="button" aria-label="Remove saved search">×</button>`;
+      pill.querySelector("span").onclick = () => { Object.assign(state, s.state); syncControls(); render(); };
+      pill.querySelector(".x").onclick = (e) => { e.stopPropagation(); savedSearches.splice(i,1); renderSaved(); };
+      box.appendChild(pill);
+    });
+  }
+
+  function syncControls() {
+    document.getElementById("q").value = state.q;
+    document.getElementById("f-role").value = state.role;
+    document.getElementById("f-city").value = state.city;
+    document.getElementById("f-type").value = state.type;
+  }
+
+  function escapeHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
   function renderStats() {
     const open = JOBS.length;
@@ -383,6 +492,12 @@
   fillSelect("f-city","city",uniq("city"));
   fillSelect("f-type","type",uniq("employmentType"));
   document.getElementById("q").addEventListener("input", e => { state.q = e.target.value; render(); });
+  document.getElementById("save-search").addEventListener("click", () => {
+    const label = searchLabel();
+    if (savedSearches.some(s => s.label === label)) return;
+    savedSearches.push({ label, state: { ...state } });
+    renderSaved();
+  });
   renderStats();
   render();
 </script>

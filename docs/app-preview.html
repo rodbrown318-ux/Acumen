@@ -1,0 +1,263 @@
+<title>Complete Staffing App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --ground: #eef1f5; --surface: #ffffff; --surface-2: #f4f7fa;
+    --ink: #13293d; --ink-soft: #4a5b6b; --ink-faint: #7c8b98; --line: #dde4ec;
+    --accent: #0c8577; --accent-ink: #ffffff; --accent-soft: #e2f1ee;
+    --warm: #c85a2b; --warm-soft: #f8e7dd; --good: #0a7d5a; --good-soft: #dff2ea;
+    --pay: #0a6f63; --focus: #0c8577;
+    --shadow: 0 1px 2px rgba(19,41,61,.06), 0 8px 24px rgba(19,41,61,.08);
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --ground: #0d1720; --surface: #15232f; --surface-2: #1b2c3a;
+    --ink: #e8eef4; --ink-soft: #a7b6c3; --ink-faint: #74869a; --line: #263847;
+    --accent: #24a99a; --accent-ink: #04120f; --accent-soft: #16332f;
+    --warm: #e68a5c; --warm-soft: #33241b; --good: #4fc4a0; --good-soft: #14312a;
+    --pay: #4fc4b4; --focus: #38c2b2;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.4);
+  } }
+  :root[data-theme="dark"] {
+    --ground: #0d1720; --surface: #15232f; --surface-2: #1b2c3a;
+    --ink: #e8eef4; --ink-soft: #a7b6c3; --ink-faint: #74869a; --line: #263847;
+    --accent: #24a99a; --accent-ink: #04120f; --accent-soft: #16332f;
+    --warm: #e68a5c; --warm-soft: #33241b; --good: #4fc4a0; --good-soft: #14312a;
+    --pay: #4fc4b4; --focus: #38c2b2;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.4);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  h1,h2,h3 { letter-spacing: -.02em; margin: 0; }
+  .mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: 15px; flex: none; }
+  .btn { font: inherit; font-weight: 650; cursor: pointer; border: 0; border-radius: 10px; padding: 12px 18px; background: var(--accent); color: var(--accent-ink); }
+  .btn:hover { filter: brightness(1.07); }
+  .btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--ink); }
+  .btn.ghost:hover { border-color: var(--ink-faint); }
+  .demo-note { font-size: 12px; color: var(--ink-faint); }
+  .badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: 3px 8px; border-radius: 6px; display: inline-block; }
+  .b-new { background: var(--accent-soft); color: var(--pay); }
+  .b-warn { background: var(--warm-soft); color: var(--warm); }
+  .b-good { background: var(--good-soft); color: var(--good); }
+
+  /* Login */
+  .login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px;
+    background: radial-gradient(70% 60% at 50% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%), var(--ground); }
+  .login { width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 30px; box-shadow: var(--shadow); }
+  .login .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; margin-bottom: 4px; }
+  .login h1 { font-size: 21px; margin: 16px 0 4px; }
+  .login p.sub { color: var(--ink-soft); font-size: 14px; margin: 0 0 20px; }
+  .roles { display: flex; gap: 8px; margin-bottom: 18px; background: var(--surface-2); padding: 4px; border-radius: 11px; }
+  .roles button { flex: 1; font: inherit; font-weight: 600; font-size: 13.5px; cursor: pointer; border: 0; background: transparent; color: var(--ink-soft); padding: 9px; border-radius: 8px; }
+  .roles button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--ink-faint); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+  .field input { width: 100%; font: inherit; font-size: 15px; padding: 12px 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--ink); }
+  .field input:focus { outline: 2px solid var(--focus); outline-offset: 1px; border-color: transparent; }
+  .login .btn { width: 100%; padding: 13px; margin-top: 6px; }
+  .callout { margin-top: 18px; padding: 11px 13px; border-radius: 10px; background: var(--warm-soft); color: var(--warm); font-size: 12.5px; }
+
+  /* App shell */
+  .app { display: none; min-height: 100vh; }
+  .app.on { display: grid; grid-template-columns: 240px 1fr; }
+  aside { background: var(--surface); border-right: 1px solid var(--line); padding: 18px 14px; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0; height: 100vh; }
+  aside .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; padding: 4px 6px; }
+  aside .brand small { display: block; font-size: 11px; color: var(--ink-faint); font-weight: 500; }
+  nav { display: flex; flex-direction: column; gap: 3px; }
+  nav button { display: flex; align-items: center; gap: 10px; font: inherit; font-size: 14px; font-weight: 550; text-align: left; cursor: pointer; border: 0; background: transparent; color: var(--ink-soft); padding: 10px 11px; border-radius: 9px; }
+  nav button:hover { background: var(--surface-2); color: var(--ink); }
+  nav button[aria-current="true"] { background: var(--accent-soft); color: var(--pay); }
+  aside .foot { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+  main { padding: 26px clamp(18px,4vw,36px); max-width: 1000px; }
+  .page-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .page-h h2 { font-size: clamp(21px,3vw,28px); }
+  .page-h .sub { color: var(--ink-faint); font-size: 13.5px; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 15px; padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; }
+  .card > h3 { font-size: 15px; margin-bottom: 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint); font-weight: 600; padding: 0 10px 10px; }
+  td { padding: 12px 10px; border-top: 1px solid var(--line); }
+  td.strong { font-weight: 600; }
+  .tbl-wrap { overflow-x: auto; }
+
+  .ring { position: relative; width: 84px; height: 84px; flex: none; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .pct { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 750; font-size: 18px; }
+  .tasks { list-style: none; margin: 0; padding: 0; }
+  .task { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .task:first-child { border-top: 0; }
+  .tick { width: 20px; height: 20px; border-radius: 50%; flex: none; display: grid; place-items: center; }
+  .tick.done { background: var(--good-soft); color: var(--good); } .tick.todo { background: var(--surface-2); border: 1.5px dashed var(--line); }
+  .task .t { font-size: 14px; font-weight: 600; } .task.done .t { color: var(--good); font-weight: 550; }
+  .task .go { margin-left: auto; font: inherit; font-size: 12.5px; font-weight: 650; cursor: pointer; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 7px 13px; }
+  .stat-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 16px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 15px; box-shadow: var(--shadow); }
+  .stat .n { font-size: 24px; font-weight: 750; font-variant-numeric: tabular-nums; }
+  .stat .k { font-size: 11.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+  @media (max-width: 780px) { .app.on { grid-template-columns: 1fr; } aside { position: static; height: auto; flex-direction: row; flex-wrap: wrap; } nav { flex-direction: row; flex-wrap: wrap; } .grid2, .stat-row { grid-template-columns: 1fr 1fr; } }
+</style>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login">
+  <div class="login">
+    <div class="brand"><span class="mark">CS</span> Complete Staffing</div>
+    <h1 id="login-title">Sign in</h1>
+    <p class="sub" id="login-sub">Access your caregiver portal.</p>
+    <div class="roles" role="tablist">
+      <button role="tab" aria-selected="true" data-role="caregiver">Caregiver</button>
+      <button role="tab" aria-selected="false" data-role="admin">Admin / Recruiter</button>
+    </div>
+    <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@example.com" /></div>
+    <div class="field"><label>Password</label><input id="password" type="password" placeholder="••••••••" /></div>
+    <button class="btn" id="signin">Sign in</button>
+    <div class="callout">⚠️ Demo login — no real authentication yet. Any email/password (or none) works. Production auth (Supabase Auth) is the next step.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <aside>
+    <div class="brand"><span class="mark">CS</span><span>Complete Staffing<small id="role-label">Caregiver</small></span></div>
+    <nav id="nav"></nav>
+    <div class="foot">
+      <span class="demo-note" id="who"></span>
+      <button class="btn ghost" id="signout">Sign out</button>
+    </div>
+  </aside>
+  <main id="main"></main>
+</div>
+
+<script>
+  // ---------- Demo data ----------
+  const CAREGIVER = {
+    name: "Dana Whitfield",
+    profile: { complete: 3, total: 5, sections: [
+      { label: "Contact details", done: true }, { label: "Credentials on file", done: true },
+      { label: "Weekly availability", done: false }, { label: "Compliance up to date", done: false },
+      { label: "Active for placement", done: true } ] },
+    tasks: [
+      { title: "Verify your contact information", done: true },
+      { title: "Add your credentials", done: true },
+      { title: "Set your weekly availability", done: false },
+      { title: "Renew expiring credentials — BLS/CPR in 20 days", done: false } ],
+    assignments: [
+      { role: "CNA — Orlando Health", where: "Orlando, FL", when: "Tue Aug 18, 7:00 AM" },
+      { role: "CNA — Brookdale ALF", where: "Orlando, FL", when: "Sat Aug 22, 6:30 AM" } ],
+    applications: [
+      { role: "CNA · Orlando Health", status: "contacted", when: "Aug 15" },
+      { role: "LPN · Baptist Health", status: "new", when: "Aug 14" } ],
+    saved: [ { label: "CNA · Orlando · Per diem", notify: true } ],
+  };
+  const ADMIN = {
+    stats: { applicants: 12, requests: 4, openShifts: 7, alertsSent: 9 },
+    applications: [
+      { name: "Dana Whitfield", role: "CNA", phone: "(407) 555-0101", status: "contacted", when: "Aug 15" },
+      { name: "Marco Reyes", role: "RN", phone: "(813) 555-0102", status: "new", when: "Aug 15" },
+      { name: "Janelle White", role: "CNA", phone: "(904) 555-0148", status: "screening", when: "Aug 14" },
+      { name: "Devon Tate", role: "LPN", phone: "(813) 555-0177", status: "placed", when: "Aug 12" } ],
+    requests: [
+      { facility: "Sunrise SNF", role: "CNA", headcount: 3, city: "Tampa", status: "new" },
+      { facility: "Orlando Health", role: "RN", headcount: 2, city: "Orlando", status: "reviewing" },
+      { facility: "Baptist Health", role: "LPN", headcount: 1, city: "Jacksonville", status: "approved" } ],
+    caregivers: [
+      { name: "Dana Whitfield", profession: "CNA", city: "Orlando", creds: "CNA, BLS" },
+      { name: "Marco Reyes", profession: "RN", city: "Tampa", creds: "RN" },
+      { name: "Janelle White", profession: "CNA", city: "Jacksonville", creds: "CNA" } ],
+  };
+
+  const S = { role: "caregiver", view: null };
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const badge = (st) => {
+    const cls = st === "new" ? "b-new" : (st === "placed" || st === "approved") ? "b-good" : "b-warn";
+    return `<span class="badge ${cls}">${esc(st)}</span>`;
+  };
+
+  // ---------- Login ----------
+  document.querySelectorAll('.roles button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.roles button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+    S.role = b.dataset.role;
+    $("login-title").textContent = S.role === "admin" ? "Admin sign in" : "Sign in";
+    $("login-sub").textContent = S.role === "admin" ? "Manage applicants, requests and shifts." : "Access your caregiver portal.";
+  });
+  $("signin").onclick = () => { $("login").style.display = "none"; $("app").classList.add("on"); enterApp(); };
+  $("signout").onclick = () => { $("app").classList.remove("on"); $("login").style.display = "grid"; };
+
+  function enterApp() {
+    $("role-label").textContent = S.role === "admin" ? "Admin / Recruiter" : "Caregiver";
+    $("who").textContent = ($("email").value || (S.role === "admin" ? "admin@completestaffing.org" : "dana@example.com"));
+    const items = S.role === "admin"
+      ? [["home","Overview"],["apps","Applications"],["reqs","Staff requests"],["cgs","Caregivers"]]
+      : [["home","Home"],["apps","My applications"],["saved","Saved searches"]];
+    $("nav").innerHTML = items.map(([k,l],i) => `<button data-view="${k}" ${i===0?'aria-current="true"':''}>${l}</button>`).join("");
+    $("nav").querySelectorAll("button").forEach(b => b.onclick = () => {
+      $("nav").querySelectorAll("button").forEach(x => x.removeAttribute("aria-current"));
+      b.setAttribute("aria-current","true"); render(b.dataset.view);
+    });
+    render("home");
+  }
+
+  // ---------- Render ----------
+  function render(view) {
+    S.view = view;
+    $("main").innerHTML = S.role === "admin" ? adminView(view) : caregiverView(view);
+    if (S.role === "caregiver" && view === "home") drawRing();
+  }
+
+  function caregiverView(view) {
+    if (view === "apps") return page("My applications", "Track where each application stands.",
+      table(["Role","Applied","Status"], CAREGIVER.applications.map(a => [a.role, a.when, badge(a.status)])));
+    if (view === "saved") return page("Saved searches", "We text you when a match opens.",
+      `<div class="card">${CAREGIVER.saved.map(s => `<div class="task"><span class="t">🔔 ${esc(s.label)}</span><span class="badge b-good" style="margin-left:auto">Alerts on</span></div>`).join("")}</div>`);
+    const p = CAREGIVER.profile;
+    return page(`Welcome back, ${CAREGIVER.name.split(" ")[0]}`, "Here's what to do before your next shift.", `
+      <div class="grid2">
+        <div class="card"><h3>Complete your profile</h3>
+          <div style="display:flex;gap:18px;align-items:center">
+            <div class="ring"><svg width="84" height="84"><circle cx="42" cy="42" r="36" fill="none" stroke="var(--line)" stroke-width="8"/><circle id="rv" cx="42" cy="42" r="36" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round"/></svg><div class="pct">${Math.round(p.complete/p.total*100)}%</div></div>
+            <ul class="tasks" style="flex:1">${p.sections.map(s => `<li class="task" style="padding:6px 0;border:0"><span class="tick ${s.done?'done':'todo'}">${s.done?'✓':''}</span><span class="t" style="font-weight:${s.done?550:600}">${esc(s.label)}</span></li>`).join("")}</ul>
+          </div>
+        </div>
+        <div class="card"><h3>Get ready for your next assignment</h3>
+          <ul class="tasks">${CAREGIVER.tasks.map(t => `<li class="task ${t.done?'done':''}"><span class="tick ${t.done?'done':'todo'}">${t.done?'✓':''}</span><span class="t">${esc(t.title)}</span>${t.done?'':'<button class="go">Update</button>'}</li>`).join("")}</ul>
+        </div>
+      </div>
+      <div class="card"><h3>Upcoming assignments</h3>
+        ${CAREGIVER.assignments.map(a => `<div class="task"><div><div style="font-weight:650">${esc(a.role)}</div><div style="font-size:13px;color:var(--ink-soft)">${esc(a.where)}</div></div><span style="margin-left:auto;font-size:13px;color:var(--ink-soft)">${esc(a.when)}</span></div>`).join("")}
+      </div>`);
+  }
+
+  function adminView(view) {
+    if (view === "apps") return page("Applications", "Every caregiver who applied.",
+      table(["Name","Role","Phone","Applied","Status"], ADMIN.applications.map(a => [`<span class="strong">${esc(a.name)}</span>`, a.role, a.phone, a.when, badge(a.status)])));
+    if (view === "reqs") return page("Staff requests", "Facilities asking to be staffed.",
+      table(["Facility","Role","Openings","City","Status"], ADMIN.requests.map(r => [`<span class="strong">${esc(r.facility)}</span>`, r.role, r.headcount, r.city, badge(r.status)])) +
+      `<p class="demo-note" style="margin-top:12px">Approving a request creates open shifts (backend action <code>fulfillStaffRequest</code>).</p>`);
+    if (view === "cgs") return page("Caregivers", "Your talent bench.",
+      table(["Name","Profession","City","Credentials"], ADMIN.caregivers.map(c => [`<span class="strong">${esc(c.name)}</span>`, c.profession, c.city, c.creds])));
+    const s = ADMIN.stats;
+    return page("Overview", "Live pipeline at a glance.", `
+      <div class="stat-row">
+        <div class="stat"><div class="n">${s.applicants}</div><div class="k">New applicants</div></div>
+        <div class="stat"><div class="n">${s.requests}</div><div class="k">Staff requests</div></div>
+        <div class="stat"><div class="n">${s.openShifts}</div><div class="k">Open shifts</div></div>
+        <div class="stat"><div class="n">${s.alertsSent}</div><div class="k">Alerts sent</div></div>
+      </div>
+      <div class="card"><h3>Latest applications</h3>${table(["Name","Role","Status"], ADMIN.applications.slice(0,3).map(a => [`<span class="strong">${esc(a.name)}</span>`, a.role, badge(a.status)]))}</div>`);
+  }
+
+  function page(title, sub, body) {
+    return `<div class="page-h"><h2>${esc(title)}</h2><span class="sub">${esc(sub)}</span></div>${body}`;
+  }
+  function table(cols, rows) {
+    return `<div class="card" style="padding:16px"><div class="tbl-wrap"><table><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>`;
+  }
+  function drawRing() {
+    const p = CAREGIVER.profile, r = 36, c = 2*Math.PI*r, el = $("rv");
+    if (el) { el.style.strokeDasharray = c; el.style.strokeDashoffset = c*(1 - p.complete/p.total); }
+  }
+</script>

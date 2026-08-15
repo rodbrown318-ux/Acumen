@@ -29,9 +29,10 @@ jobs:
 
       - name: Type-check each function entrypoint
         run: |
-          set -e
+          fail=0
           for entry in supabase/functions/*/index.ts; do
             echo "::group::deno check $entry"
-            deno check "$entry"
+            deno check "$entry" || fail=1
             echo "::endgroup::"
           done
+          exit $fail

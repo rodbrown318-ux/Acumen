@@ -4,9 +4,14 @@ import { resolveTenant } from "./auth.ts";
 import { log } from "./logger.ts";
 import { AgentName, AgentRequest, AgentResponse } from "./types.ts";
 
-export type ActionHandlers<TPayload = unknown, TResult = unknown> = Record<
+// Each action may return its own result shape, so the value type is
+// Promise<unknown> rather than a single shared TResult -- otherwise an agent
+// with two actions that return different types (e.g. operations' ping vs.
+// pollShifts) fails to type-check. The result is only ever JSON-serialized
+// into the response envelope, so `unknown` is the right contract here.
+export type ActionHandlers<TPayload = unknown> = Record<
   string,
-  (req: AgentRequest<TPayload>) => Promise<TResult>
+  (req: AgentRequest<TPayload>) => Promise<unknown>
 >;
 
 /**
@@ -16,9 +21,9 @@ export type ActionHandlers<TPayload = unknown, TResult = unknown> = Record<
  * `{ actionName: handlerFn }` — this is what keeps 7 standalone Edge
  * Functions behaving like one coherent system.
  */
-export function createAgentHandler<TPayload = unknown, TResult = unknown>(
+export function createAgentHandler<TPayload = unknown>(
   agent: AgentName,
-  actions: ActionHandlers<TPayload, TResult>,
+  actions: ActionHandlers<TPayload>,
 ) {
   return async (req: Request): Promise<Response> => {
     const preflight = handlePreflight(req);
@@ -42,7 +47,7 @@ export function createAgentHandler<TPayload = unknown, TResult = unknown>(
       const result = await handler({ tenant, action, payload, correlationId });
       log(agent, "action_ok", { action, tenant: tenant.tenantSlug, correlationId });
 
-      const body: AgentResponse<TResult> = { ok: true, agent, action, result };
+      const body: AgentResponse = { ok: true, agent, action, result };
       return new Response(JSON.stringify(body), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -50,7 +55,7 @@ export function createAgentHandler<TPayload = unknown, TResult = unknown>(
       const message = err instanceof Error ? err.message : String(err);
       log(agent, "action_error", { error: message });
 
-      const body: AgentResponse<TResult> = {
+      const body: AgentResponse = {
         ok: false,
         agent,
         action: "unknown",

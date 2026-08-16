@@ -3,6 +3,7 @@ import { getMatchConfig } from "./config.ts";
 import { pollShifts } from "./poll.ts";
 import { handleRespond } from "./respond.ts";
 import { getServiceClient } from "../_shared/client.ts";
+import { FulfillInput, fulfillStaffRequest } from "./staffRequests.ts";
 
 /**
  * Operations agent: shift/caregiver matching.
@@ -22,6 +23,12 @@ const agentHandler = createAgentHandler("operations", {
   pollShifts: async ({ tenant }) => {
     const client = getServiceClient();
     return await pollShifts(client, tenant, getMatchConfig());
+  },
+  // Approve a staff request -> open shifts (facility side closes into the
+  // caregiver side; the next poll matches them).
+  fulfillStaffRequest: async ({ tenant, payload }) => {
+    const client = getServiceClient();
+    return await fulfillStaffRequest(client, tenant, payload as FulfillInput);
   },
 });
 

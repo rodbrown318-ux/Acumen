@@ -20,3 +20,54 @@ verify_jwt = false
 
 [functions.design]
 verify_jwt = false
+
+# Public, candidate-facing job board (read-only). Not one of the 7 agents --
+# no agent calls it via the bus -- so it is intentionally absent from
+# AgentName in _shared/types.ts. verify_jwt stays false because the caller is
+# an anonymous job seeker; tenant identity comes from a ?tenant= query param.
+[functions.jobs]
+verify_jwt = false
+
+# Public quick-apply intake for the job board. Also candidate-facing (not an
+# agent): verify_jwt stays false and tenant identity comes from the posted
+# slug. Saves the lead, then fires a best-effort recruiter SMS.
+[functions.applications]
+verify_jwt = false
+
+# Candidate portal (read-only). Accepts a real Supabase Auth JWT
+# (Authorization: Bearer) resolved via caregivers.auth_user_id, or the legacy
+# portal_token. verify_jwt stays false so both paths work — the JWT is verified
+# in-code (see _shared/userAuth.ts).
+[functions.portal]
+verify_jwt = false
+
+# Registration wizard (public POST): creates a caregiver profile + optional
+# credentials/availability, returns a portal magic-link token.
+[functions.register]
+verify_jwt = false
+
+# Candidate self-service writes. Real login (Authorization: Bearer JWT) or the
+# legacy portal_token; JWT verified in-code, so verify_jwt stays false.
+[functions.account]
+verify_jwt = false
+
+# Job-alerts poll (service-to-service, cron-driven like operations). Matches
+# new open shifts to saved searches and emails caregivers.
+[functions.alerts]
+verify_jwt = false
+
+# Market insights (Aya Index-style), public read-only aggregate stats.
+[functions.insights]
+verify_jwt = false
+
+# "Request Staff" intake (public POST): the facility/client side of the
+# marketplace. Saves the request + finds/creates the client, then emails the
+# agency. Tenant from the posted slug (multi-tenant / white-label ready).
+[functions.staffing]
+verify_jwt = false
+
+# Authenticated admin API (recruiter console data). Requires a Supabase Auth
+# JWT that maps to an `admins` row; scoped to that admin's tenant. JWT verified
+# in-code (and non-admins rejected 403), so verify_jwt stays false.
+[functions.admin]
+verify_jwt = false

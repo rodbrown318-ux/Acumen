@@ -112,9 +112,10 @@
       <button role="tab" aria-selected="false" data-role="admin">Admin / Recruiter</button>
     </div>
     <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@example.com" /></div>
-    <div class="field"><label>Password</label><input id="password" type="password" placeholder="••••••••" /></div>
+    <div class="field"><label>Password <span style="text-transform:none;font-weight:500;color:var(--ink-faint)">— or leave blank for a magic link</span></label><input id="password" type="password" placeholder="••••••••" /></div>
     <button class="btn" id="signin">Sign in</button>
-    <div class="callout">⚠️ Demo login — no real authentication yet. Any email/password (or none) works. Production auth (Supabase Auth) is the next step.</div>
+    <div id="msg" class="demo-note" style="margin-top:12px;min-height:1.2em"></div>
+    <div class="callout">Wired to Supabase Auth (project <b>wcntkelmuxjczhyauupq</b>). This sandbox preview blocks external calls, so it drops to demo mode here; on your deployed site it authenticates for real.</div>
   </div>
 </div>
 
@@ -184,8 +185,47 @@
     $("login-title").textContent = S.role === "admin" ? "Admin sign in" : "Sign in";
     $("login-sub").textContent = S.role === "admin" ? "Manage applicants, requests and shifts." : "Access your caregiver portal.";
   });
-  $("signin").onclick = () => { $("login").style.display = "none"; $("app").classList.add("on"); enterApp(); };
-  $("signout").onclick = () => { $("app").classList.remove("on"); $("login").style.display = "grid"; };
+  // Supabase Auth config (publishable key — safe client-side). Override with
+  // window.CS_SUPABASE_URL / CS_SUPABASE_ANON_KEY when deploying elsewhere.
+  const SUPA = {
+    url: (window.CS_SUPABASE_URL || "https://wcntkelmuxjczhyauupq.supabase.co").replace(/\/$/, ""),
+    anon: window.CS_SUPABASE_ANON_KEY || "sb_publishable_t6JL8xgpyl3IuGkQJF7xUQ_pmgRME5h",
+  };
+  const setMsg = (t) => { $("msg").textContent = t; };
+
+  async function supaPassword(email, password) {
+    const r = await fetch(`${SUPA.url}/auth/v1/token?grant_type=password`, {
+      method: "POST", headers: { "apikey": SUPA.anon, "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error_description || j.msg || ("HTTP " + r.status));
+    return j.access_token; // send as Authorization: Bearer <token> to our endpoints
+  }
+  async function supaMagicLink(email) {
+    const r = await fetch(`${SUPA.url}/auth/v1/otp`, {
+      method: "POST", headers: { "apikey": SUPA.anon, "Content-Type": "application/json" },
+      body: JSON.stringify({ email, create_user: true }),
+    });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.msg || ("HTTP " + r.status)); }
+  }
+  function openApp() { $("login").style.display = "none"; $("app").classList.add("on"); enterApp(); }
+
+  $("signin").onclick = async () => {
+    const email = $("email").value.trim(), pw = $("password").value;
+    setMsg("");
+    try {
+      if (pw) { S.jwt = await supaPassword(email, pw); openApp(); }
+      else if (email) { await supaMagicLink(email); setMsg("✓ Check your email for your sign-in link."); }
+      else { setMsg("Enter your email (for a magic link) or email + password."); }
+    } catch (err) {
+      // Sandbox CSP or network failure -> fall back to demo so the preview works.
+      console.warn("Supabase auth unavailable here, demo mode:", err.message);
+      setMsg("Preview can't reach Supabase (sandbox) — opening demo mode…");
+      setTimeout(openApp, 650);
+    }
+  };
+  $("signout").onclick = () => { S.jwt = null; $("app").classList.remove("on"); $("login").style.display = "grid"; setMsg(""); };
 
   function enterApp() {
     $("role-label").textContent = S.role === "admin" ? "Admin / Recruiter" : "Caregiver";

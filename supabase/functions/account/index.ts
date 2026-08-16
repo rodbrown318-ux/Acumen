@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
   try {
     const client = getServiceClient();
     // Real login (Authorization: Bearer <jwt>) first, then legacy portal_token.
-    let caregiver = null;
+    let caregiver: Awaited<ReturnType<typeof getCaregiverByToken>> = null;
     const userId = await getAuthUserId(req, client);
     if (userId) caregiver = await getCaregiverByAuthUserId(client, userId);
     if (!caregiver && token) caregiver = await getCaregiverByToken(client, token);

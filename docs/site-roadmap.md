@@ -135,11 +135,15 @@ Deferred (out of current scope):
 - CEU / continuing-education platform.
 - Recruiter-side status console (advancing an application through the pipeline)
   — the data model supports it; the internal UI isn't built.
-- Auth: **foundation now in place** — `caregivers.auth_user_id` + `admins`
-  table linked to `auth.users`, RLS self-read policies, and `portal`/`account`
-  accept a real Supabase Auth JWT (legacy `portal_token` still works). Remaining:
-  enable Email auth in the Supabase dashboard, wire the login UI to authenticate,
-  and add the authenticated admin API + admin RLS.
+- Auth: **largely in place.** `caregivers.auth_user_id` + `admins` linked to
+  `auth.users`; RLS self-read policies; `portal`/`account` accept a real
+  Supabase Auth JWT (legacy `portal_token` still works). Registration now
+  **creates + links a Supabase Auth user**, and authenticated requests
+  **link-by-email** to connect pre-existing caregivers on first login. The
+  **`admin`** function is the authenticated, tenant-scoped recruiter API
+  (overview / applications / requests / caregivers). Remaining: confirm Email
+  auth is enabled on the active project, bootstrap the first `admins` row, and
+  wire the deployed front-end to send the JWT (the sandbox preview can't).
 
 ---
 

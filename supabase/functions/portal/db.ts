@@ -42,6 +42,49 @@ export async function getCaregiverByAuthUserId(
 }
 
 /**
+ * Link an as-yet-unlinked caregiver to this auth user by matching email — how
+ * caregivers that existed before real login get connected on their first
+ * authenticated request. Only claims a row whose auth_user_id is still null.
+ */
+export async function linkCaregiverByEmail(
+  client: SupabaseClient,
+  userId: string,
+  email: string,
+): Promise<Caregiver | null> {
+  const { data, error } = await client
+    .from("caregivers")
+    .update({ auth_user_id: userId })
+    .eq("email", email)
+    .is("auth_user_id", null)
+    .select("*")
+    .maybeSingle();
+  if (error) throw error;
+  return (data as Caregiver | null) ?? null;
+}
+
+/**
+ * Full caregiver resolution for an authenticated request: by auth_user_id
+ * first, then a one-time link-by-email, then the legacy portal_token. Shared by
+ * the portal and account endpoints.
+ */
+export async function resolveCaregiver(
+  client: SupabaseClient,
+  auth: { id: string; email: string | null } | null,
+  token: string | null,
+): Promise<Caregiver | null> {
+  if (auth) {
+    const byId = await getCaregiverByAuthUserId(client, auth.id);
+    if (byId) return byId;
+    if (auth.email) {
+      const linked = await linkCaregiverByEmail(client, auth.id, auth.email);
+      if (linked) return linked;
+    }
+  }
+  if (token) return await getCaregiverByToken(client, token);
+  return null;
+}
+
+/**
  * Build the whole portal home from the caregiver's own rows. One function so
  * the endpoint stays a thin wrapper; all the derivation lives here.
  */

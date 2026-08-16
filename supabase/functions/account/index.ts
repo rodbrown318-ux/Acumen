@@ -1,8 +1,8 @@
 import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
-import { getAuthUserId } from "../_shared/userAuth.ts";
+import { getAuthUser } from "../_shared/userAuth.ts";
 import { log } from "../_shared/logger.ts";
-import { getCaregiverByAuthUserId, getCaregiverByToken } from "../portal/db.ts";
+import { resolveCaregiver } from "../portal/db.ts";
 import {
   addCredential,
   addReferral,
@@ -45,10 +45,8 @@ Deno.serve(async (req) => {
   try {
     const client = getServiceClient();
     // Real login (Authorization: Bearer <jwt>) first, then legacy portal_token.
-    let caregiver: Awaited<ReturnType<typeof getCaregiverByToken>> = null;
-    const userId = await getAuthUserId(req, client);
-    if (userId) caregiver = await getCaregiverByAuthUserId(client, userId);
-    if (!caregiver && token) caregiver = await getCaregiverByToken(client, token);
+    const auth = await getAuthUser(req, client);
+    const caregiver = await resolveCaregiver(client, auth, typeof token === "string" ? token : null);
     if (!caregiver) return json({ ok: false, error: "Not signed in, or invalid portal link." }, 401);
 
     let result: unknown;

@@ -1,8 +1,8 @@
 import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
-import { getAuthUserId } from "../_shared/userAuth.ts";
+import { getAuthUser } from "../_shared/userAuth.ts";
 import { log } from "../_shared/logger.ts";
-import { buildPortalSummary, getCaregiverByAuthUserId, getCaregiverByToken } from "./db.ts";
+import { buildPortalSummary, resolveCaregiver } from "./db.ts";
 
 /**
  * Candidate portal home (roadmap Tier 4 #15). Returns a caregiver's profile
@@ -30,11 +30,8 @@ Deno.serve(async (req) => {
 
   try {
     const client = getServiceClient();
-    let caregiver = token ? await getCaregiverByToken(client, token) : null;
-    if (!caregiver) {
-      const userId = await getAuthUserId(req, client);
-      if (userId) caregiver = await getCaregiverByAuthUserId(client, userId);
-    }
+    const auth = await getAuthUser(req, client);
+    const caregiver = await resolveCaregiver(client, auth, token);
     if (!caregiver) {
       return json({ ok: false, error: "Not signed in, or invalid portal link." }, 401);
     }

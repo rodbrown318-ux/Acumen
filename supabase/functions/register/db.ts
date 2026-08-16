@@ -24,7 +24,7 @@ export async function registerCaregiver(
   client: SupabaseClient,
   tenant: TenantRef,
   input: RegisterInput,
-): Promise<{ caregiverId: string; portalToken: string }> {
+): Promise<{ caregiverId: string; portalToken: string; authLinked: boolean }> {
   const { data: caregiver, error } = await client
     .from("caregivers")
     .insert({
@@ -41,6 +41,23 @@ export async function registerCaregiver(
   if (error) throw error;
 
   const caregiverId = caregiver.id as string;
+
+  // Create a Supabase Auth user so the caregiver can log in (magic link), and
+  // link it. Best-effort: if the email already has an account (or auth is
+  // misconfigured), we skip — link-by-email on first login still connects them.
+  let authLinked = false;
+  try {
+    const { data: authData, error: authErr } = await client.auth.admin.createUser({
+      email: input.email,
+      email_confirm: true,
+    });
+    if (!authErr && authData?.user) {
+      await client.from("caregivers").update({ auth_user_id: authData.user.id }).eq("id", caregiverId);
+      authLinked = true;
+    }
+  } catch {
+    // ignore — registration still succeeds without the auth link
+  }
 
   if (input.credentials?.length) {
     const rows = input.credentials.map((c) => ({
@@ -63,5 +80,5 @@ export async function registerCaregiver(
     if (availErr) throw availErr;
   }
 
-  return { caregiverId, portalToken: caregiver.portal_token as string };
+  return { caregiverId, portalToken: caregiver.portal_token as string, authLinked };
 }

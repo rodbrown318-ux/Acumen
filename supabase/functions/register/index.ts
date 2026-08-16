@@ -44,11 +44,12 @@ Deno.serve(async (req) => {
     const tenant = await resolveTenantBySlug(client, input.tenant.trim());
     if (!tenant) return json({ ok: false, error: `Unknown tenant: ${input.tenant}` }, 404);
 
-    const { caregiverId, portalToken } = await registerCaregiver(client, tenant, input);
+    const { caregiverId, portalToken, authLinked } = await registerCaregiver(client, tenant, input);
 
     log("operations", "caregiver_registered", {
       tenant: tenant.tenantSlug,
       caregiverId,
+      authLinked,
       credentials: input.credentials?.length ?? 0,
       availability: input.availability?.length ?? 0,
     });
@@ -57,6 +58,7 @@ Deno.serve(async (req) => {
       ok: true,
       caregiverId,
       portalToken,
+      authLinked,
       portalPath: `/functions/v1/portal?token=${portalToken}`,
     });
   } catch (err) {

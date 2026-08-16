@@ -65,3 +65,9 @@ verify_jwt = false
 # agency. Tenant from the posted slug (multi-tenant / white-label ready).
 [functions.staffing]
 verify_jwt = false
+
+# Authenticated admin API (recruiter console data). Requires a Supabase Auth
+# JWT that maps to an `admins` row; scoped to that admin's tenant. JWT verified
+# in-code (and non-admins rejected 403), so verify_jwt stays false.
+[functions.admin]
+verify_jwt = false

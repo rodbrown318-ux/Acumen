@@ -1,21 +1,22 @@
 import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
+import { getAuthUserId } from "../_shared/userAuth.ts";
 import { log } from "../_shared/logger.ts";
-import { buildPortalSummary, getCaregiverByToken } from "./db.ts";
+import { buildPortalSummary, getCaregiverByAuthUserId, getCaregiverByToken } from "./db.ts";
 
 /**
  * Candidate portal home (roadmap Tier 4 #15). Returns a caregiver's profile
  * completeness, "get ready" task list, upcoming assignments, and saved
  * searches -- all derived from rows the Operations agent already maintains.
  *
- * Auth: an opaque per-caregiver `portal_token` in the query string, the same
- * magic-link pattern as operations' /respond. It scopes the response to one
- * caregiver without full end-user auth. Production should move to Supabase
- * Auth JWT and rotate these tokens (see CLAUDE.md runtime notes); until then
- * the portal is deliberately read-only.
+ * Auth, two ways (checked in order):
+ *   1. Real login — `Authorization: Bearer <supabase access_token>`, resolved
+ *      to the caregiver via auth_user_id. This is the production path.
+ *   2. Legacy magic link — `?token=<caregiver.portal_token>`, kept working for
+ *      the existing flow/prototypes.
  *
- *   GET /functions/v1/portal?token=<caregiver.portal_token>
- *     -> { ok, portal: PortalSummary }
+ *   GET /functions/v1/portal            (with Authorization header), or
+ *   GET /functions/v1/portal?token=...  -> { ok, portal: PortalSummary }
  */
 Deno.serve(async (req) => {
   const preflight = handlePreflight(req);
@@ -26,16 +27,16 @@ Deno.serve(async (req) => {
   }
 
   const token = new URL(req.url).searchParams.get("token");
-  if (!token) {
-    return json({ ok: false, error: "Missing required 'token' query parameter." }, 400);
-  }
 
   try {
     const client = getServiceClient();
-    const caregiver = await getCaregiverByToken(client, token);
+    let caregiver = token ? await getCaregiverByToken(client, token) : null;
     if (!caregiver) {
-      // Same response for unknown vs. malformed token -- don't leak which.
-      return json({ ok: false, error: "Invalid or expired portal link." }, 404);
+      const userId = await getAuthUserId(req, client);
+      if (userId) caregiver = await getCaregiverByAuthUserId(client, userId);
+    }
+    if (!caregiver) {
+      return json({ ok: false, error: "Not signed in, or invalid portal link." }, 401);
     }
 
     const portal = await buildPortalSummary(client, caregiver);

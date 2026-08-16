@@ -135,8 +135,11 @@ Deferred (out of current scope):
 - CEU / continuing-education platform.
 - Recruiter-side status console (advancing an application through the pipeline)
   — the data model supports it; the internal UI isn't built.
-- Auth: candidate endpoints use opaque `portal_token` magic-links; move to
-  Supabase Auth JWT before writes handle anything sensitive.
+- Auth: **foundation now in place** — `caregivers.auth_user_id` + `admins`
+  table linked to `auth.users`, RLS self-read policies, and `portal`/`account`
+  accept a real Supabase Auth JWT (legacy `portal_token` still works). Remaining:
+  enable Email auth in the Supabase dashboard, wire the login UI to authenticate,
+  and add the authenticated admin API + admin RLS.
 
 ---
 

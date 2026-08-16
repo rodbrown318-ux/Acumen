@@ -1,7 +1,8 @@
 import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 import { getServiceClient } from "../_shared/client.ts";
+import { getAuthUserId } from "../_shared/userAuth.ts";
 import { log } from "../_shared/logger.ts";
-import { getCaregiverByToken } from "../portal/db.ts";
+import { getCaregiverByAuthUserId, getCaregiverByToken } from "../portal/db.ts";
 import {
   addCredential,
   addReferral,
@@ -39,13 +40,16 @@ Deno.serve(async (req) => {
 
   const { token, action } = body;
   const payload = body.payload ?? {};
-  if (!token) return json({ ok: false, error: "Missing 'token'." }, 400);
   if (!action) return json({ ok: false, error: "Missing 'action'." }, 400);
 
   try {
     const client = getServiceClient();
-    const caregiver = await getCaregiverByToken(client, token);
-    if (!caregiver) return json({ ok: false, error: "Invalid or expired portal link." }, 404);
+    // Real login (Authorization: Bearer <jwt>) first, then legacy portal_token.
+    let caregiver = null;
+    const userId = await getAuthUserId(req, client);
+    if (userId) caregiver = await getCaregiverByAuthUserId(client, userId);
+    if (!caregiver && token) caregiver = await getCaregiverByToken(client, token);
+    if (!caregiver) return json({ ok: false, error: "Not signed in, or invalid portal link." }, 401);
 
     let result: unknown;
     switch (action) {

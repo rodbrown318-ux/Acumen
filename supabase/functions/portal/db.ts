@@ -27,6 +27,20 @@ export async function getCaregiverByToken(
   return (data as Caregiver | null) ?? null;
 }
 
+/** Resolve a caregiver from their Supabase Auth user id (real login). */
+export async function getCaregiverByAuthUserId(
+  client: SupabaseClient,
+  userId: string,
+): Promise<Caregiver | null> {
+  const { data, error } = await client
+    .from("caregivers")
+    .select("*")
+    .eq("auth_user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as Caregiver | null) ?? null;
+}
+
 /**
  * Build the whole portal home from the caregiver's own rows. One function so
  * the endpoint stays a thin wrapper; all the derivation lives here.

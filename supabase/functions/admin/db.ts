@@ -112,7 +112,7 @@ export async function listPendingCredentials(client: SupabaseClient, tenantId: s
     .limit(200);
   if (error) throw error;
   return (data ?? []).map((row) => {
-    const cg = (Array.isArray(row.caregivers) ? row.caregivers[0] : row.caregivers) as
+    const cg = (Array.isArray(row.caregivers) ? row.caregivers[0] : row.caregivers) as unknown as
       | { id: string; full_name: string }
       | null;
     return {
@@ -145,7 +145,7 @@ export async function verifyCredential(
     .maybeSingle();
   if (findErr) throw findErr;
   const cg = cred
-    ? ((Array.isArray(cred.caregivers) ? cred.caregivers[0] : cred.caregivers) as
+    ? ((Array.isArray(cred.caregivers) ? cred.caregivers[0] : cred.caregivers) as unknown as
       | { id: string; tenant_id: string }
       | null)
     : null;

@@ -78,8 +78,10 @@ export async function listVerifiedCaregivers(
   const byCaregiver = new Map<string, DirectoryCaregiver>();
   for (const row of data ?? []) {
     // Embedded to-one row comes back as an object (or an array, depending on
-    // the client version) — normalize to a single caregiver record.
-    const cg = (Array.isArray(row.caregivers) ? row.caregivers[0] : row.caregivers) as
+    // the client version) — normalize to a single caregiver record. Double-cast
+    // via `unknown` like the other embedded-select consumers (alerts/db.ts),
+    // since the parsed embed type doesn't overlap this shape directly.
+    const cg = (Array.isArray(row.caregivers) ? row.caregivers[0] : row.caregivers) as unknown as
       | {
         id: string;
         full_name: string;

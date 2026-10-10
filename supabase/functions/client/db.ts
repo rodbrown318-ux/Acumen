@@ -62,9 +62,11 @@ export async function listVerifiedCaregivers(
   const nowIso = new Date().toISOString();
   const { data, error } = await client
     .from("caregiver_credentials")
+    // Single string literal (no concatenation): postgrest-js parses the select
+    // as a template-literal type to shape `data`; a concatenated `string` loses
+    // that and the rows degrade to GenericStringError.
     .select(
-      "credential_type, expires_at, " +
-        "caregivers!inner(id, full_name, profession, specialty, experience_years, tenant_id, is_active, directory_opt_out)",
+      "credential_type, expires_at, caregivers!inner(id, full_name, profession, specialty, experience_years, tenant_id, is_active, directory_opt_out)",
     )
     .eq("verification_status", "verified")
     .or(`expires_at.is.null,expires_at.gt.${nowIso}`)

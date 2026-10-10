@@ -102,9 +102,9 @@ export async function listCaregivers(client: SupabaseClient, tenantId: string) {
 export async function listPendingCredentials(client: SupabaseClient, tenantId: string) {
   const { data, error } = await client
     .from("caregiver_credentials")
+    // Single string literal (no concatenation) so postgrest-js can shape `data`.
     .select(
-      "id, credential_type, expires_at, created_at, " +
-        "caregivers!inner(id, full_name, tenant_id)",
+      "id, credential_type, expires_at, created_at, caregivers!inner(id, full_name, tenant_id)",
     )
     .eq("verification_status", "pending")
     .eq("caregivers.tenant_id", tenantId)

@@ -107,18 +107,25 @@ async function handleMutation(
   if (body.action !== "verifyCredential") {
     return json({ ok: false, error: `Unknown action '${body.action ?? ""}'.` }, 400);
   }
-  if (!body.credentialId?.trim()) {
+  const credentialId = body.credentialId?.trim();
+  if (!credentialId) {
     return json({ ok: false, error: "Missing 'credentialId'." }, 400);
   }
-  if (body.decision !== "verified" && body.decision !== "rejected") {
+  // Narrow to the literal union so the typed verifyCredential call is sound.
+  const decision = body.decision === "verified"
+    ? "verified"
+    : body.decision === "rejected"
+    ? "rejected"
+    : null;
+  if (!decision) {
     return json({ ok: false, error: "'decision' must be 'verified' or 'rejected'." }, 400);
   }
 
   const result = await verifyCredential(
     client,
     admin,
-    body.credentialId.trim(),
-    body.decision,
+    credentialId,
+    decision,
     body.reason?.trim() || null,
   );
   log("operations", "credential_review", {

@@ -121,15 +121,17 @@ export async function listClientRequests(
   client: SupabaseClient,
   ctx: ClientContext,
 ): Promise<ClientRequest[]> {
+  // Apply filters before order()/limit(): those return a transform builder
+  // that no longer exposes .eq(), so the client_id filter must come first.
   let query = client
     .from("staff_requests")
     .select("id, facility_name, role, headcount, city, status, created_at")
-    .eq("tenant_id", ctx.tenantId)
-    .order("created_at", { ascending: false })
-    .limit(100);
+    .eq("tenant_id", ctx.tenantId);
   if (ctx.via === "client") query = query.eq("client_id", ctx.id);
 
-  const { data, error } = await query;
+  const { data, error } = await query
+    .order("created_at", { ascending: false })
+    .limit(100);
   if (error) throw error;
   return (data ?? []).map((r) => ({
     id: r.id as string,

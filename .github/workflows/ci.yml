@@ -1,0 +1,38 @@
+name: CI
+
+# Validates the Supabase Edge Functions on every push and pull request:
+# Deno type-checking (catches the errors we can't run locally) and linting.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel an in-flight run when a newer commit is pushed to the same PR/branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  edge-functions:
+    name: Lint & type-check Edge Functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Lint
+        run: deno lint supabase/functions
+
+      - name: Type-check each function entrypoint
+        run: |
+          fail=0
+          for entry in supabase/functions/*/index.ts; do
+            echo "::group::deno check $entry"
+            deno check "$entry" || fail=1
+            echo "::endgroup::"
+          done
+          exit $fail

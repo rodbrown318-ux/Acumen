@@ -7,7 +7,9 @@ import {
   getOverview,
   listApplications,
   listCaregivers,
+  listPendingCredentials,
   listStaffRequests,
+  verifyCredential,
 } from "./db.ts";
 
 /**
@@ -16,8 +18,14 @@ import {
  * in `admins`; everything returned is scoped to that admin's tenant, so it is
  * multi-tenant safe. Not public: a valid JWT that isn't an admin gets 403.
  *
- *   GET /functions/v1/admin?resource=overview|applications|requests|caregivers
+ *   GET /functions/v1/admin?resource=overview|applications|requests|caregivers|pendingCredentials
  *   (with Authorization: Bearer <access_token>)
+ *
+ * Credential review (the source of the client-facing verified directory):
+ *   POST /functions/v1/admin
+ *   { "action": "verifyCredential", "credentialId": "...",
+ *     "decision": "verified" | "rejected", "reason": "optional, for rejected" }
+ *   Owner/admin only — recruiters are read-only for now.
  *
  * Bootstrapping the first admin: create a Supabase Auth user, then insert a row
  * into `admins` (tenant_id, auth_user_id, email, role='owner').
@@ -26,8 +34,8 @@ Deno.serve(async (req) => {
   const preflight = handlePreflight(req);
   if (preflight) return preflight;
 
-  if (req.method !== "GET") {
-    return json({ ok: false, error: "This endpoint only supports GET." }, 405);
+  if (req.method !== "GET" && req.method !== "POST") {
+    return json({ ok: false, error: "This endpoint only supports GET and POST." }, 405);
   }
 
   try {
@@ -37,6 +45,8 @@ Deno.serve(async (req) => {
 
     const admin = await getAdminByAuthUserId(client, auth.id);
     if (!admin) return json({ ok: false, error: "Not authorized for admin access." }, 403);
+
+    if (req.method === "POST") return await handleMutation(client, admin, req);
 
     const resource = new URL(req.url).searchParams.get("resource") ?? "overview";
     let data: unknown;
@@ -53,6 +63,9 @@ Deno.serve(async (req) => {
       case "caregivers":
         data = await listCaregivers(client, admin.tenantId);
         break;
+      case "pendingCredentials":
+        data = await listPendingCredentials(client, admin.tenantId);
+        break;
       default:
         return json({ ok: false, error: `Unknown resource '${resource}'.` }, 400);
     }
@@ -65,6 +78,57 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: message }, 500);
   }
 });
+
+interface MutationBody {
+  action?: string;
+  credentialId?: string;
+  decision?: string;
+  reason?: string;
+}
+
+async function handleMutation(
+  client: ReturnType<typeof getServiceClient>,
+  admin: Awaited<ReturnType<typeof getAdminByAuthUserId>>,
+  req: Request,
+): Promise<Response> {
+  if (!admin) return json({ ok: false, error: "Not authorized for admin access." }, 403);
+  // Verifying credentials is owner/admin only; recruiters are read-only for now.
+  if (admin.role !== "owner" && admin.role !== "admin") {
+    return json({ ok: false, error: "Your role cannot verify credentials." }, 403);
+  }
+
+  let body: MutationBody;
+  try {
+    body = await req.json() as MutationBody;
+  } catch {
+    return json({ ok: false, error: "Invalid JSON body." }, 400);
+  }
+
+  if (body.action !== "verifyCredential") {
+    return json({ ok: false, error: `Unknown action '${body.action ?? ""}'.` }, 400);
+  }
+  if (!body.credentialId?.trim()) {
+    return json({ ok: false, error: "Missing 'credentialId'." }, 400);
+  }
+  if (body.decision !== "verified" && body.decision !== "rejected") {
+    return json({ ok: false, error: "'decision' must be 'verified' or 'rejected'." }, 400);
+  }
+
+  const result = await verifyCredential(
+    client,
+    admin,
+    body.credentialId.trim(),
+    body.decision,
+    body.reason?.trim() || null,
+  );
+  log("operations", "credential_review", {
+    adminId: admin.id,
+    tenant: admin.tenantId,
+    credentialId: result.id,
+    decision: result.status,
+  });
+  return json({ ok: true, action: "verifyCredential", role: admin.role, result });
+}
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {

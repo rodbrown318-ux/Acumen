@@ -93,3 +93,87 @@ export async function listCaregivers(client: SupabaseClient, tenantId: string) {
     active: c.is_active as boolean,
   }));
 }
+
+/**
+ * Credentials awaiting the agency's verification decision, tenant-scoped. These
+ * are what gate a caregiver into the client-facing directory, so this is the
+ * admin's review queue.
+ */
+export async function listPendingCredentials(client: SupabaseClient, tenantId: string) {
+  const { data, error } = await client
+    .from("caregiver_credentials")
+    .select(
+      "id, credential_type, expires_at, created_at, " +
+        "caregivers!inner(id, full_name, tenant_id)",
+    )
+    .eq("verification_status", "pending")
+    .eq("caregivers.tenant_id", tenantId)
+    .order("created_at", { ascending: true })
+    .limit(200);
+  if (error) throw error;
+  return (data ?? []).map((row) => {
+    const cg = (Array.isArray(row.caregivers) ? row.caregivers[0] : row.caregivers) as
+      | { id: string; full_name: string }
+      | null;
+    return {
+      id: row.id as string,
+      credentialType: row.credential_type as string,
+      expiresAt: (row.expires_at as string | null) ?? null,
+      caregiverId: cg?.id ?? null,
+      caregiverName: cg?.full_name ?? null,
+    };
+  });
+}
+
+/**
+ * Record the agency's verification decision on a credential. Tenant-scoped: the
+ * credential must belong to a caregiver in this admin's tenant, or it is
+ * treated as not found. 'verified' credentials (non-expired) are what surface a
+ * caregiver in the client directory; 'rejected' keeps them out and records why.
+ */
+export async function verifyCredential(
+  client: SupabaseClient,
+  admin: AdminContext,
+  credentialId: string,
+  decision: "verified" | "rejected",
+  reason: string | null,
+): Promise<{ id: string; status: string; caregiverId: string | null }> {
+  const { data: cred, error: findErr } = await client
+    .from("caregiver_credentials")
+    .select("id, credential_type, caregivers!inner(id, tenant_id)")
+    .eq("id", credentialId)
+    .maybeSingle();
+  if (findErr) throw findErr;
+  const cg = cred
+    ? ((Array.isArray(cred.caregivers) ? cred.caregivers[0] : cred.caregivers) as
+      | { id: string; tenant_id: string }
+      | null)
+    : null;
+  if (!cred || !cg || cg.tenant_id !== admin.tenantId) {
+    throw new Error("Credential not found in your tenant.");
+  }
+
+  const { error: updErr } = await client
+    .from("caregiver_credentials")
+    .update({
+      verification_status: decision,
+      verified_at: decision === "verified" ? new Date().toISOString() : null,
+      verified_by: admin.id,
+      rejection_reason: decision === "rejected" ? reason : null,
+    })
+    .eq("id", credentialId);
+  if (updErr) throw updErr;
+
+  const { error: logErr } = await client.from("agent_decisions").insert({
+    tenant_id: admin.tenantId,
+    agent: "operations",
+    decision_type: decision === "verified" ? "credential_verified" : "credential_rejected",
+    subject_type: "caregiver_credential",
+    subject_id: credentialId,
+    summary: `${admin.email} ${decision} ${cred.credential_type} credential` +
+      (decision === "rejected" && reason ? ` (${reason})` : ""),
+  });
+  if (logErr) throw logErr;
+
+  return { id: credentialId, status: decision, caregiverId: cg.id };
+}

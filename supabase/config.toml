@@ -71,3 +71,10 @@ verify_jwt = false
 # in-code (and non-admins rejected 403), so verify_jwt stays false.
 [functions.admin]
 verify_jwt = false
+
+# Locked-down client (facility) portal: the verified-caregiver directory and
+# the client's own requests. Requires a Supabase Auth JWT that maps to a
+# `clients` row (or an agency admin); no anonymous/token access. JWT verified
+# in-code (non-clients rejected 403), so verify_jwt stays false.
+[functions.client]
+verify_jwt = false

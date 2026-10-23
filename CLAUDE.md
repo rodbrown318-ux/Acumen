@@ -239,6 +239,37 @@ only — the function reads live env vars, not this file).
   any `caregivers`/`shifts` data — that's real business data and has to
   come from Complete Staffing, not be fabricated by a migration.
 
+## Client portal & verified-caregiver directory
+
+The marketplace has two public intake endpoints — `jobs`/`applications`
+(caregiver side) and `staffing` (facility "Request Staff") — plus two
+**locked-down, logged-in** surfaces behind a Supabase Auth JWT (verified
+in-code via `_shared/userAuth.ts`, never anonymous):
+
+- **`admin/`** — the agency console (overview, applications, requests,
+  caregivers, `pendingCredentials`). A `POST {action:"verifyCredential",
+  credentialId, decision, reason?}` records the agency's verify/reject
+  decision on a caregiver credential; owner/admin only (recruiters are
+  read-only for now). This is the *source of truth* for "verified".
+- **`client/`** — the client (facility) portal. A JWT must resolve to a
+  `clients` row (via `clients.auth_user_id`) or an agency admin previewing;
+  anything else is 403. Resources: `directory` (the verified-caregiver
+  directory), `requests` (the client's own staff requests), `me`.
+
+**What "verified" means and why the directory is safe to expose:** a
+caregiver appears in the directory only when they are `is_active`, have not
+set `directory_opt_out`, and hold at least one `caregiver_credentials` row
+with `verification_status = 'verified'` that has not expired — an explicit
+agency decision, never "a row exists". The directory returns **no contact
+details** (no email/phone); clients reach a caregiver through the agency
+(Request Staff), so browsing stays PII-free. See
+`20260813060000_client_portal.sql` for the schema (client↔auth link,
+credential verification columns, `directory_opt_out`) and the self-read RLS
+policy.
+
+Onboarding a client login (agency-side, one-time): create a Supabase Auth
+user for the contact, then set that `clients` row's `auth_user_id`.
+
 ## Runtime notes
 
 - Agents run on Deno (Supabase Edge Functions runtime), not Node — imports

@@ -1,0 +1,390 @@
+<title>Find Work Homepage</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --ground: #eef1f5;
+    --surface: #ffffff;
+    --surface-2: #f4f7fa;
+    --ink: #13293d;
+    --ink-soft: #4a5b6b;
+    --ink-faint: #7c8b98;
+    --line: #dde4ec;
+    --accent: #0c8577;
+    --accent-ink: #ffffff;
+    --accent-soft: #e2f1ee;
+    --warm: #c85a2b;
+    --warm-soft: #f8e7dd;
+    --pay: #0a6f63;
+    --focus: #0c8577;
+    --hero-1: #0c8577;
+    --hero-2: #0a3f4a;
+    --hero-ink: #eafaf6;
+    --hero-ink-soft: #a9d8d0;
+    --glass: rgba(255,255,255,.10);
+    --glass-line: rgba(255,255,255,.22);
+    --shadow: 0 1px 2px rgba(19,41,61,.06), 0 8px 26px rgba(19,41,61,.08);
+    --shadow-lg: 0 30px 60px -20px rgba(6,40,42,.45);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0d1720; --surface: #15232f; --surface-2: #1b2c3a;
+      --ink: #e8eef4; --ink-soft: #a7b6c3; --ink-faint: #74869a; --line: #263847;
+      --accent: #24a99a; --accent-ink: #04120f; --accent-soft: #16332f;
+      --warm: #e68a5c; --warm-soft: #33241b; --pay: #4fc4b4; --focus: #38c2b2;
+      --hero-1: #0c5f57; --hero-2: #06222a; --hero-ink: #eafaf6; --hero-ink-soft: #9fcfc7;
+      --glass: rgba(255,255,255,.07); --glass-line: rgba(255,255,255,.15);
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.4);
+      --shadow-lg: 0 30px 60px -20px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0d1720; --surface: #15232f; --surface-2: #1b2c3a;
+    --ink: #e8eef4; --ink-soft: #a7b6c3; --ink-faint: #74869a; --line: #263847;
+    --accent: #24a99a; --accent-ink: #04120f; --accent-soft: #16332f;
+    --warm: #e68a5c; --warm-soft: #33241b; --pay: #4fc4b4; --focus: #38c2b2;
+    --hero-1: #0c5f57; --hero-2: #06222a; --hero-ink: #eafaf6; --hero-ink-soft: #9fcfc7;
+    --glass: rgba(255,255,255,.07); --glass-line: rgba(255,255,255,.15);
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.4);
+    --shadow-lg: 0 30px 60px -20px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    line-height: 1.55; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 22px; }
+  a { color: inherit; }
+  h1, h2, h3 { letter-spacing: -.025em; text-wrap: balance; }
+
+  /* Header */
+  header.site { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .site-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 0; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .brand .mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: 15px; }
+  .brand small { display: block; font-weight: 500; font-size: 11px; color: var(--ink-faint); }
+  nav.main { display: flex; align-items: center; gap: 4px; }
+  nav.main a { text-decoration: none; color: var(--ink-soft); font-size: 14px; font-weight: 550; padding: 8px 12px; border-radius: 8px; }
+  nav.main a:hover { color: var(--ink); background: var(--surface-2); }
+  .btn { font: inherit; font-weight: 650; cursor: pointer; text-decoration: none; border-radius: 10px; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 8px; }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); padding: 10px 17px; font-size: 14px; }
+  .btn-primary:hover { filter: brightness(1.07); }
+  .btn-ghost { border-color: var(--line); color: var(--ink); background: transparent; padding: 9px 15px; font-size: 14px; }
+  .btn-ghost:hover { border-color: var(--ink-faint); }
+  .btn-lg { padding: 14px 24px; font-size: 15.5px; border-radius: 12px; }
+  @media (max-width: 780px) { nav.main a:not(.cta-nav) { display: none; } }
+
+  /* Hero */
+  .hero { position: relative; color: var(--hero-ink); overflow: hidden; background: linear-gradient(150deg, var(--hero-1), var(--hero-2) 78%); }
+  .hero::before { content: ""; position: absolute; inset: 0; background:
+      radial-gradient(60% 55% at 80% 8%, rgba(255,255,255,.18), transparent 60%),
+      radial-gradient(45% 45% at 12% 95%, rgba(0,0,0,.28), transparent 60%); pointer-events: none; }
+  .hero-grid { position: relative; display: grid; grid-template-columns: 1.15fr .85fr; gap: 44px; align-items: center; padding: 70px 0 84px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--hero-ink); background: var(--glass); border: 1px solid var(--glass-line); padding: 6px 12px; border-radius: 999px; }
+  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: #7dffe6; box-shadow: 0 0 0 0 rgba(125,255,230,.6); animation: pulse 2.4s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(125,255,230,.55)} 70%{box-shadow:0 0 0 9px rgba(125,255,230,0)} 100%{box-shadow:0 0 0 0 rgba(125,255,230,0)} }
+  .hero h1 { font-size: clamp(34px, 5.4vw, 58px); line-height: 1.02; margin: 18px 0 16px; max-width: 15ch; }
+  .hero h1 em { font-style: normal; color: #8ff0dd; }
+  .hero .lede { font-size: clamp(16px, 2vw, 19px); color: var(--hero-ink-soft); max-width: 46ch; margin: 0 0 26px; }
+
+  /* Hero search */
+  .search-card { background: color-mix(in srgb, var(--surface) 96%, transparent); color: var(--ink); border-radius: 16px; padding: 14px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 10px; max-width: 460px; }
+  .search-fields { display: flex; gap: 8px; }
+  .sf { position: relative; flex: 1; display: flex; }
+  .sf select { appearance: none; -webkit-appearance: none; width: 100%; font: inherit; font-size: 14px; font-weight: 550; color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 34px 12px 12px; cursor: pointer; }
+  .sf .chev { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: var(--ink-faint); pointer-events: none; }
+  .search-card .btn-primary { justify-content: center; padding: 13px; }
+  .microtrust { display: flex; gap: 6px 16px; flex-wrap: wrap; margin-top: 22px; color: var(--hero-ink-soft); font-size: 12.5px; }
+  .microtrust span { display: inline-flex; align-items: center; gap: 6px; }
+
+  /* Hero live card */
+  .live { position: relative; }
+  .live-card { background: var(--glass); border: 1px solid var(--glass-line); border-radius: 18px; padding: 16px; backdrop-filter: blur(8px); box-shadow: var(--shadow-lg); }
+  .live-head { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--hero-ink-soft); margin-bottom: 12px; letter-spacing: .03em; text-transform: uppercase; }
+  .live-head .live-dot { display: inline-flex; align-items: center; gap: 6px; }
+  .live-head .live-dot i { width: 7px; height: 7px; border-radius: 50%; background: #7dffe6; display: inline-block; animation: pulse 2.4s infinite; }
+  .shift { background: color-mix(in srgb, var(--surface) 94%, transparent); color: var(--ink); border-radius: 12px; padding: 13px 14px; box-shadow: 0 6px 18px rgba(0,0,0,.14); }
+  .shift + .shift { margin-top: 10px; }
+  .shift .r { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .shift .role { font-weight: 700; font-size: 15px; }
+  .shift .pay { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; color: var(--pay); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .shift .sub { color: var(--ink-soft); font-size: 12.5px; margin-top: 2px; }
+  .shift .tag { display: inline-block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--pay); background: var(--accent-soft); padding: 2px 7px; border-radius: 5px; margin-top: 7px; }
+
+  /* Sections */
+  section { padding: 66px 0; }
+  .sec-head { text-align: center; max-width: 40ch; margin: 0 auto 40px; }
+  .sec-head .kicker { font-size: 12.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); }
+  .sec-head h2 { font-size: clamp(25px, 3.6vw, 36px); margin: 10px 0 10px; }
+  .sec-head p { color: var(--ink-soft); margin: 0; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; counter-reset: step; }
+  .step { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px; box-shadow: var(--shadow); }
+  .step .num { counter-increment: step; width: 34px; height: 34px; border-radius: 10px; background: var(--accent-soft); color: var(--pay); font-weight: 800; display: grid; place-items: center; margin-bottom: 14px; }
+  .step .num::before { content: counter(step); }
+  .step h3 { font-size: 17px; margin: 0 0 7px; }
+  .step p { color: var(--ink-soft); font-size: 14px; margin: 0; }
+
+  .roles { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .role-chip { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; box-shadow: var(--shadow); min-width: 128px; }
+  .role-chip b { display: block; font-size: 16px; }
+  .role-chip span { font-size: 12.5px; color: var(--ink-faint); }
+
+  .why { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .feat { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; box-shadow: var(--shadow); }
+  .feat .ic { width: 40px; height: 40px; border-radius: 11px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; margin-bottom: 13px; }
+  .feat h3 { font-size: 16px; margin: 0 0 6px; }
+  .feat p { color: var(--ink-soft); font-size: 13.5px; margin: 0; }
+
+  /* Acumen band */
+  .band { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 34px; display: flex; align-items: center; justify-content: space-between; gap: 24px; box-shadow: var(--shadow); flex-wrap: wrap; }
+  .band h3 { font-size: clamp(20px, 2.6vw, 26px); margin: 0 0 6px; }
+  .band p { color: var(--ink-soft); margin: 0; max-width: 52ch; }
+  .band .warm { color: var(--warm); }
+
+  /* Testimonials */
+  .quotes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .quote { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; box-shadow: var(--shadow); }
+  .quote p { margin: 0 0 14px; font-size: 14.5px; }
+  .who { display: flex; align-items: center; gap: 11px; }
+  .who .av { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(140deg, var(--accent), var(--hero-2)); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+  .who .n { font-size: 13.5px; font-weight: 650; }
+  .who .role2 { font-size: 12px; color: var(--ink-faint); }
+
+  /* Final CTA */
+  .final { position: relative; overflow: hidden; border-radius: 22px; background: linear-gradient(140deg, var(--hero-1), var(--hero-2)); color: var(--hero-ink); padding: 52px 34px; text-align: center; box-shadow: var(--shadow-lg); }
+  .final::before { content: ""; position: absolute; inset: 0; background: radial-gradient(50% 60% at 50% 0%, rgba(255,255,255,.16), transparent 60%); }
+  .final h2 { position: relative; font-size: clamp(26px, 4vw, 40px); margin: 0 0 12px; }
+  .final p { position: relative; color: var(--hero-ink-soft); margin: 0 auto 24px; max-width: 46ch; }
+  .final .btn-primary { position: relative; background: #fff; color: var(--hero-2); }
+  .final .btn-primary:hover { background: #eafaf6; }
+
+  footer.site-foot { border-top: 1px solid var(--line); background: var(--surface); margin-top: 20px; }
+  .foot-grid { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: 34px 0; }
+  .foot-grid .col h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); margin: 0 0 10px; }
+  .foot-grid .col a { display: block; text-decoration: none; color: var(--ink-soft); font-size: 13.5px; padding: 3px 0; }
+  .foot-grid .col a:hover { color: var(--accent); }
+  .foot-note { border-top: 1px solid var(--line); padding: 14px 0; font-size: 12px; color: var(--ink-faint); text-align: center; }
+
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+  @media (prefers-reduced-motion: reduce) { .eyebrow .dot, .live-head .live-dot i { animation: none; } }
+  @media (max-width: 820px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 30px; padding: 48px 0 60px; }
+    .live { order: -1; }
+    .steps, .why, .quotes { grid-template-columns: 1fr; }
+  }
+</style>
+
+<header class="site">
+  <div class="wrap site-row">
+    <div class="brand"><span class="mark">CS</span><span>Complete Staffing<small>Florida healthcare careers</small></span></div>
+    <nav class="main">
+      <a href="#how">How it works</a>
+      <a href="#roles">Roles</a>
+      <a href="#why">Why us</a>
+      <a href="#train">Get certified</a>
+      <a class="btn btn-ghost" href="portal-preview.html">Log in</a>
+      <a class="btn btn-primary cta-nav" href="job-board-preview.html">Browse shifts</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero" id="find">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow"><span class="dot"></span> Now enrolling Florida caregivers</span>
+      <h1>Your next healthcare <em>shift</em> in Florida — pay shown up front.</h1>
+      <p class="lede">Join the Complete Staffing network and get first access to CNA, HHA, LPN and RN shifts across Orlando, Tampa, Miami and Jacksonville. See the pay, apply in about a minute, and a local recruiter texts you back — same day.</p>
+
+      <div class="search-card">
+        <div class="search-fields">
+          <label class="sf">
+            <select id="hero-role" aria-label="Role"><option value="">Any role</option><option>CNA</option><option>HHA</option><option>PCA</option><option>LPN</option><option>RN</option></select>
+            <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </label>
+          <label class="sf">
+            <select id="hero-city" aria-label="City"><option value="">All Florida</option><option>Orlando</option><option>Tampa</option><option>Miami</option><option>Jacksonville</option></select>
+            <svg class="chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </label>
+        </div>
+        <a class="btn btn-primary" id="hero-go" href="job-board-preview.html">Browse open shifts →</a>
+      </div>
+
+      <div class="microtrust">
+        <span>✓ HIPAA-compliant</span>
+        <span>✓ Background-verified</span>
+        <span>✓ Weekly pay</span>
+        <span>✓ You choose your shifts</span>
+      </div>
+    </div>
+
+    <div class="live">
+      <div class="live-card">
+        <div class="live-head"><span class="live-dot"><i></i> Live openings</span><span id="live-count">—</span></div>
+        <div id="live-shifts"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">How it works</div>
+      <h2>From “I need work” to booked in three steps</h2>
+      <p>No résumé to start. No long forms. Just the shifts you want and a real person to get you placed.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="num"></div><h3>Find a shift</h3><p>Browse open shifts by role, city and pay — everything visible before you apply.</p></div>
+      <div class="step"><div class="num"></div><h3>Apply in 60 seconds</h3><p>First name and mobile number is all it takes. Upload credentials later.</p></div>
+      <div class="step"><div class="num"></div><h3>Get placed</h3><p>A local recruiter texts you the same day, confirms details, and books you in.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="roles" style="padding-top:0;">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">Who we place</div>
+      <h2>Roles we’re hiring across Florida</h2>
+      <p>Per-diem, contract and permanent — from a single shift to full-time.</p>
+    </div>
+    <div class="roles">
+      <div class="role-chip"><b>CNA</b><span>Certified Nursing Assistant</span></div>
+      <div class="role-chip"><b>HHA</b><span>Home Health Aide</span></div>
+      <div class="role-chip"><b>PCA</b><span>Personal Care Assistant</span></div>
+      <div class="role-chip"><b>LPN</b><span>Licensed Practical Nurse</span></div>
+      <div class="role-chip"><b>RN</b><span>Registered Nurse</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="why" style="padding-top:0;">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">Why Complete Staffing</div>
+      <h2>Local, fast, and actually on your side</h2>
+      <p>We’re a Florida team — not a national call center. That’s the difference you feel.</p>
+    </div>
+    <div class="why">
+      <div class="feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></svg></div><h3>Pay up front</h3><p>See the rate on every shift before you apply. No “ask your recruiter” mystery.</p></div>
+      <div class="feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg></div><h3>Same-day response</h3><p>Apply and a real Florida recruiter texts you back the same day — often within the hour.</p></div>
+      <div class="feat"><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><h3>You pick your shifts</h3><p>Work when and where you want — per-diem days, nights, or a steady contract.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="train" style="padding-top:0;">
+  <div class="wrap">
+    <div class="band">
+      <div>
+        <h3>Not certified yet? <span class="warm">Start here.</span></h3>
+        <p>Get your CNA certification through our sister program, <b>Acumen CNA Training</b> — then step straight into our staffing pipeline with a guaranteed first interview.</p>
+      </div>
+      <a class="btn btn-primary btn-lg" href="#">Explore CNA training →</a>
+    </div>
+  </div>
+</section>
+
+<section id="stories" style="padding-top:0;">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">From our caregivers</div>
+      <h2>Real people, real shifts</h2>
+      <p>Placeholder quotes — swap in verified caregiver testimonials before launch.</p>
+    </div>
+    <div class="quotes">
+      <div class="quote"><p>“Applied on my phone during a break and had a shift booked by that evening. The recruiter actually knew the facility.”</p><div class="who"><div class="av">MR</div><div><div class="n">Maria R.</div><div class="role2">CNA · Orlando</div></div></div></div>
+      <div class="quote"><p>“I like seeing the pay before I apply. No back and forth, no surprises. Picked up three per-diem shifts my first week.”</p><div class="who"><div class="av">DT</div><div><div class="n">Devon T.</div><div class="role2">LPN · Tampa</div></div></div></div>
+      <div class="quote"><p>“Did the CNA course through Acumen and they placed me right after. Went from no experience to working in a month.”</p><div class="who"><div class="av">JW</div><div><div class="n">Janelle W.</div><div class="role2">CNA · Jacksonville</div></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="join" style="padding-top:0;">
+  <div class="wrap">
+    <div class="final">
+      <h2>Get first access to Florida shifts.</h2>
+      <p>Join the network now while we’re onboarding caregivers. Be first in line as new shifts open across the state.</p>
+      <a class="btn btn-primary btn-lg" href="job-board-preview.html">Browse open shifts →</a>
+    </div>
+  </div>
+</section>
+
+<footer class="site-foot">
+  <div class="wrap foot-grid">
+    <div class="brand"><span class="mark">CS</span><span>Complete Staffing<small>Florida healthcare careers</small></span></div>
+    <div class="col"><h4>For caregivers</h4><a href="job-board-preview.html">Browse shifts</a><a href="#how">How it works</a><a href="#train">Get certified</a><a href="portal-preview.html">Log in</a></div>
+    <div class="col"><h4>Roles</h4><a href="#">CNA jobs</a><a href="#">HHA jobs</a><a href="#">LPN jobs</a><a href="#">RN jobs</a></div>
+    <div class="col"><h4>Company</h4><a href="#">About</a><a href="#">Contact</a><a href="#">Privacy</a></div>
+  </div>
+  <div class="foot-note">Prototype homepage for <b>completestaffing.org</b> · single “Find Work” track, built to add Facilities / Families / Training tracks later.</div>
+</footer>
+
+<script>
+  // Live-endpoint config (see the board's notes). Set window.CS_API_BASE to the
+  // deployed Supabase URL; empty resolves same-origin. The board lives at
+  // BOARD_URL — the hero search deep-links into it with ?role=&city=.
+  const CONFIG = { apiBase: (window.CS_API_BASE || "").replace(/\/$/, ""), tenant: "complete-staffing" };
+  const BOARD_URL = "job-board-preview.html";
+
+  // Hero search -> board deep link.
+  const heroRole = document.getElementById("hero-role");
+  const heroCity = document.getElementById("hero-city");
+  const heroGo = document.getElementById("hero-go");
+  function boardUrl() {
+    const p = new URLSearchParams();
+    if (heroRole.value) p.set("role", heroRole.value);
+    if (heroCity.value) p.set("city", heroCity.value);
+    const qs = p.toString();
+    return qs ? `${BOARD_URL}?${qs}` : BOARD_URL;
+  }
+  const syncHref = () => heroGo.setAttribute("href", boardUrl());
+  heroRole.addEventListener("change", syncHref);
+  heroCity.addEventListener("change", syncHref);
+  syncHref();
+
+  // Live-openings preview. Pulls the real /jobs feed; falls back to sample
+  // shifts (same PublicJob shape) when the endpoint isn't reachable yet.
+  const SAMPLE = [
+    { role: "CNA", facility: "Orlando Health", city: "Orlando", payRateMin: 22, payRateMax: 26, employmentType: "per_diem" },
+    { role: "RN", facility: "AdventHealth Tampa", city: "Tampa", payRateMin: 48, payRateMax: 58, employmentType: "travel" },
+    { role: "LPN", facility: "Baptist Health", city: "Jacksonville", payRateMin: 30, payRateMax: 36, employmentType: "contract" },
+    { role: "HHA", facility: "Comfort Home Care", city: "Miami", payRateMin: 18, payRateMax: 21, employmentType: "per_diem" },
+    { role: "CNA", facility: "Brookdale ALF", city: "Orlando", payRateMin: 21, payRateMax: 24, employmentType: "per_diem" },
+  ];
+  const box = document.getElementById("live-shifts");
+  const fmtType = (t) => (t || "").replace("_", " ").replace(/^\w/, (c) => c.toUpperCase());
+  const card = (s) => `
+    <div class="shift">
+      <div class="r"><span class="role">${s.role}</span><span class="pay">$${s.payRateMin}–${s.payRateMax}/hr</span></div>
+      <div class="sub">${s.facility} · ${s.city}</div>
+      <span class="tag">${fmtType(s.employmentType)}</span>
+    </div>`;
+
+  async function loadLive() {
+    try {
+      const res = await fetch(`${CONFIG.apiBase}/functions/v1/jobs?tenant=${encodeURIComponent(CONFIG.tenant)}`, { headers: { "Accept": "application/json" } });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if (!data.ok || !Array.isArray(data.jobs) || !data.jobs.length) throw new Error("no jobs");
+      return data.jobs;
+    } catch (err) {
+      console.warn("Live /jobs unavailable — hero showing sample shifts:", err.message);
+      return SAMPLE;
+    }
+  }
+
+  (async () => {
+    const shifts = await loadLive();
+    document.getElementById("live-count").textContent = shifts.length + " now";
+    let idx = 0;
+    const paint = () => {
+      box.innerHTML = card(shifts[idx % shifts.length]) + card(shifts[(idx + 1) % shifts.length]);
+    };
+    paint();
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduce && shifts.length > 2) setInterval(() => { idx = (idx + 1) % shifts.length; paint(); }, 3200);
+  })();
+</script>

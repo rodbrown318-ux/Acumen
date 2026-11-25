@@ -86,6 +86,7 @@ integrations/
     compliance.config.json        # example: business-specific agent config
     operations.config.json        # documents this tenant's Operations agent config
     README.md
+    brand/                        # logos, mark, favicons (see brand/README.md)
 ```
 
 ## The core communication layer (`supabase/functions/_shared`)

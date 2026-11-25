@@ -1,5 +1,8 @@
 <title>Complete Staffing App</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="../integrations/complete-staffing/brand/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" href="../integrations/complete-staffing/brand/icon-32.png" />
+<link rel="apple-touch-icon" href="../integrations/complete-staffing/brand/icon-180.png" />
 <style>
   :root {
     --ground: #eef1f5; --surface: #ffffff; --surface-2: #f4f7fa;
@@ -99,12 +102,13 @@
   .stat .k { font-size: 11.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
   :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
   @media (max-width: 780px) { .app.on { grid-template-columns: 1fr; } aside { position: static; height: auto; flex-direction: row; flex-wrap: wrap; } nav { flex-direction: row; flex-wrap: wrap; } .grid2, .stat-row { grid-template-columns: 1fr 1fr; } }
+  img.mark, .brand img.mark { width: auto; height: 32px; background: none; border-radius: 0; display: block; flex: none; }
 </style>
 
 <!-- LOGIN -->
 <div class="login-wrap" id="login">
   <div class="login">
-    <div class="brand"><span class="mark">CS</span> Complete Staffing</div>
+    <div class="brand"><img class="mark" src="../integrations/complete-staffing/brand/mark-wide.png" alt="Complete Staffing logo"> Complete Staffing</div>
     <h1 id="login-title">Sign in</h1>
     <p class="sub" id="login-sub">Access your caregiver portal.</p>
     <div class="roles" role="tablist">
@@ -122,7 +126,7 @@
 <!-- APP -->
 <div class="app" id="app">
   <aside>
-    <div class="brand"><span class="mark">CS</span><span>Complete Staffing<small id="role-label">Caregiver</small></span></div>
+    <div class="brand"><img class="mark" src="../integrations/complete-staffing/brand/mark-wide.png" alt="Complete Staffing logo"><span>Complete Staffing<small id="role-label">Caregiver</small></span></div>
     <nav id="nav"></nav>
     <div class="foot">
       <span class="demo-note" id="who"></span>
